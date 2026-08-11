@@ -1,0 +1,12 @@
+{
+  "connection_mode": "adb",
+  "adb_path": "adb",
+  "panda_url": "ws://127.0.0.1:22222/",
+  "shopee_package": "com.shopee.id",
+  "default_device": "",
+  "default_profile": "admin_live",
+  "step_delay_ms": 600,
+  "tap_settle_ms": 80,
+  "dry_run": true,
+  "auto_go_live": false
+}

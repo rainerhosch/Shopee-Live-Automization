@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Shopee Live Bot · Admin Panel</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-mark">S</div>
+      <div>
+        <h1>Shopee Live Bot</h1>
+        <p>Panda screen projection · Manager Panel</p>
+      </div>
+    </div>
+    <div class="badges">
+      <span class="badge" id="badge-panda"><span class="dot"></span> Panda</span>
+      <span class="badge" id="badge-bot"><span class="dot"></span> Bot</span>
+      <span class="badge" id="badge-dry"><span class="dot"></span> Mode</span>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- LEFT -->
+    <div class="stack">
+      <section class="panel">
+        <h2>Device & Status</h2>
+        <div class="btn-row" style="margin-bottom:.75rem">
+          <button class="btn btn-sm" id="btn-refresh-devices">Refresh devices</button>
+          <button class="btn btn-sm" id="btn-reconnect">Reconnect Panda</button>
+        </div>
+        <div class="device-list" id="device-list">
+          <div class="muted">Loading devices…</div>
+        </div>
+        <div class="field" style="margin-top:.85rem">
+          <label>Connection Mode</label>
+          <select id="select-conn-mode">
+            <option value="adb">Pure ADB (USB/WiFi)</option>
+            <option value="panda">Panda WebSocket</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>ADB Path (optional)</label>
+          <input id="input-adb-path" placeholder="adb (default)" />
+        </div>
+        <div class="field">
+          <label>Panda URL (optional)</label>
+          <input id="input-panda-url" placeholder="ws://127.0.0.1:22222/" />
+        </div>
+        <div class="field">
+          <label>Selected device serial</label>
+          <input id="input-device" placeholder="serial or IP:port" />
+        </div>
+        <div class="field">
+          <label>Coordinate profile</label>
+          <select id="select-profile"></select>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Dry-run (no real taps)</label>
+            <select id="select-dry">
+              <option value="true">ON (safe)</option>
+              <option value="false">OFF (live taps)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Step delay (ms)</label>
+            <input id="input-delay" type="number" min="100" step="50" value="600" />
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-sm" id="btn-save-settings">Save settings</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Bot Control</h2>
+        <div class="btn-row">
+          <button class="btn btn-ok" id="btn-start">Start Bot</button>
+          <button class="btn btn-warn" id="btn-pause">Pause</button>
+          <button class="btn btn-danger" id="btn-stop">Stop All</button>
+        </div>
+        <p class="muted" id="bot-summary" style="margin-top:.75rem">Status: stopped</p>
+      </section>
+    </div>
+
+    <!-- CENTER -->
+    <div class="stack">
+      <section class="panel">
+        <div class="section-title">
+          <h2 style="margin:0">Task Creation</h2>
+        </div>
+        <div class="tabs" id="task-tabs">
+          <button class="tab active" data-tab="lelang">Lelang</button>
+          <button class="tab" data-tab="iklan_live">Iklan Live</button>
+          <button class="tab" data-tab="bonus_koin">Bonus Koin</button>
+          <button class="tab" data-tab="hujan_bonus">Hujan Bonus</button>
+          <button class="tab" data-tab="open_shopee">Open Shopee</button>
+        </div>
+
+        <div id="form-lelang" class="task-form">
+          <div class="field-row">
+            <div class="field">
+              <label>Batas Waktu</label>
+              <select id="lelang-batas">
+                <option>10dtk</option>
+                <option>30dtk</option>
+                <option>60dtk</option>
+                <option>120dtk</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Interval (detik)</label>
+              <input id="lelang-interval" type="number" value="300" min="10" />
+            </div>
+          </div>
+          <div class="field">
+            <label>Judul (opsional)</label>
+            <input id="lelang-judul" placeholder="Lelang1" />
+          </div>
+        </div>
+
+        <div id="form-iklan_live" class="task-form hidden">
+          <div class="field-row">
+            <div class="field">
+              <label>Tujuan</label>
+              <select id="iklan-tujuan">
+                <option>GMV Max Auto</option>
+                <option>GMV Max ROAS</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Durasi</label>
+              <select id="iklan-durasi">
+                <option>Tak Terbatas</option>
+                <option>1 hari</option>
+                <option>3 hari</option>
+                <option>7 hari</option>
+                <option>14 hari</option>
+                <option>Atur sendiri</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>Interval (detik)</label>
+            <input id="iklan-interval" type="number" value="600" min="10" />
+          </div>
+        </div>
+
+        <div id="form-bonus_koin" class="task-form hidden">
+          <div class="field-row">
+            <div class="field">
+              <label>Untuk dibagikan</label>
+              <select id="bonus-bagi">
+                <option value="250000">250.000</option>
+                <option value="100000" selected>100.000</option>
+                <option value="50000">50.000</option>
+                <option value="25000">25.000</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Koin per klaim</label>
+              <select id="bonus-claim">
+                <option value="200">200</option>
+                <option value="100" selected>100</option>
+                <option value="50">50</option>
+                <option value="25">25</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>Interval (detik)</label>
+            <input id="bonus-interval" type="number" value="1200" min="10" />
+          </div>
+        </div>
+
+        <div id="form-hujan_bonus" class="task-form hidden">
+          <div class="field-row">
+            <div class="field">
+              <label>Koin untuk dibagikan</label>
+              <select id="hujan-koin">
+                <option value="127">127</option>
+                <option value="191">191</option>
+                <option value="255" selected>255</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Interval (detik)</label>
+              <input id="hujan-interval" type="number" value="600" min="10" />
+            </div>
+          </div>
+        </div>
+
+        <div id="form-open_shopee" class="task-form hidden">
+          <p class="muted">Menjalankan startApk Shopee sekali (atau terjadwal). Navigasi ke live studio masih manual / butuh kalibrasi lanjutan.</p>
+          <div class="field">
+            <label>Interval (detik)</label>
+            <input id="open-interval" type="number" value="3600" min="10" />
+          </div>
+        </div>
+
+        <div class="btn-row" style="margin-top:.5rem">
+          <button class="btn btn-primary" id="btn-add-task">Add scheduled task</button>
+          <button class="btn" id="btn-run-once">Run once now</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-title">
+          <h2 style="margin:0">Scheduled Tasks</h2>
+          <button class="btn btn-sm btn-danger" id="btn-clear-tasks">Clear all</button>
+        </div>
+        <div id="task-list"><div class="muted">No tasks yet.</div></div>
+      </section>
+
+      <section class="panel" id="calibration-panel">
+        <div class="section-title">
+          <h2 style="margin:0">Coordinate Calibration · Admin Live</h2>
+          <span class="muted" id="cal-progress-label">0 / 0</span>
+        </div>
+        <div class="progress-bar"><span id="cal-progress-bar"></span></div>
+        <p class="muted" style="margin-top:0">
+          1) Buka UI yang sesuai di HP Admin Live · 2) Pilih titik di checklist · 3) Klik posisi pada gambar referensi
+          (atau isi X/Y %) · 4) Save (+ optional Test tap).
+        </p>
+
+        <div class="cal-layout">
+          <div>
+            <div class="field">
+              <label>Reference group image</label>
+              <select id="cal-group">
+                <option value="home">Home Live bar</option>
+                <option value="lelang">Form Lelang</option>
+                <option value="iklan">Form Iklan Live</option>
+                <option value="lainnya">Menu Lainnya</option>
+                <option value="bonus">Form Bonus Koin</option>
+                <option value="hujan">Form Hujan Bonus</option>
+              </select>
+            </div>
+            <div class="ref-frame" id="ref-frame">
+              <img id="ref-image" alt="Reference UI" draggable="false" />
+              <div class="crosshair" id="ref-crosshair"></div>
+            </div>
+            <p class="ref-hint">Klik pada gambar = set X/Y persen relatif ke area gambar.</p>
+          </div>
+
+          <div>
+            <div class="field">
+              <label>Active point key</label>
+              <input id="cal-key" readonly />
+            </div>
+            <div class="field">
+              <label>Label</label>
+              <input id="cal-label" readonly />
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label>X %</label>
+                <input id="cal-x" type="number" min="0" max="100" step="0.1" />
+              </div>
+              <div class="field">
+                <label>Y %</label>
+                <input id="cal-y" type="number" min="0" max="100" step="0.1" />
+              </div>
+            </div>
+            <div class="btn-row">
+              <button class="btn btn-primary" id="btn-cal-save">Save point</button>
+              <button class="btn btn-ok" id="btn-cal-save-tap">Save + Test tap</button>
+              <button class="btn" id="btn-cal-test-only">Test tap only</button>
+            </div>
+            <p class="muted" id="cal-hint" style="margin-top:.65rem"></p>
+            <h2 style="margin-top:1rem">Checklist</h2>
+            <div class="checklist" id="cal-checklist"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="stack">
+      <section class="panel">
+        <div class="section-title">
+          <h2 style="margin:0">Live Logs</h2>
+          <button class="btn btn-sm" id="btn-clear-logs">Clear view</button>
+        </div>
+        <div class="log-box" id="log-box"></div>
+      </section>
+    </div>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

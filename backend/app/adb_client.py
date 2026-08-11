@@ -1,0 +1,132 @@
+import asyncio
+import os
+import re
+from typing import Any
+from .logger import log_bus
+from . import config as cfg
+
+class AdbClient:
+    def __init__(self) -> None:
+        self.connected = False
+        self._screen_sizes: dict[str, tuple[int, int]] = {}
+
+    def get_adb_path(self) -> str:
+        settings = cfg.load_settings()
+        path = settings.get("adb_path") or "adb"
+        if path == "adb":
+            # Auto-detect localappdata if available on Windows
+            localappdata = os.environ.get("LOCALAPPDATA")
+            if localappdata:
+                auto_path = os.path.join(localappdata, "Android", "Sdk", "platform-tools", "adb.exe")
+                if os.path.exists(auto_path):
+                    return auto_path
+        return path
+
+    async def _run_adb(self, *args: str) -> tuple[int, str, str]:
+        cmd = [self.get_adb_path(), *args]
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout, stderr = await proc.communicate()
+        return proc.returncode or 0, stdout.decode(errors='replace').strip(), stderr.decode(errors='replace').strip()
+
+    async def connect(self) -> None:
+        code, out, err = await self._run_adb("start-server")
+        if code != 0:
+            raise RuntimeError(f"Failed to start ADB server: {err}")
+        self.connected = True
+        await log_bus.info(f"ADB connected using {self.get_adb_path()}")
+
+    async def close(self) -> None:
+        self.connected = False
+        # Do not kill adb server as other apps might use it
+        self._screen_sizes.clear()
+
+    async def ensure(self) -> None:
+        if not self.connected:
+            await self.connect()
+
+    async def list_devices(self) -> dict[str, Any]:
+        await self.ensure()
+        code, out, err = await self._run_adb("devices")
+        if code != 0:
+            return {"code": 10001, "message": err, "data": []}
+        
+        devices = []
+        for line in out.splitlines()[1:]:
+            parts = line.split()
+            if len(parts) == 2 and parts[1] == "device":
+                devices.append(parts[0])
+        return {"code": 10000, "message": "OK", "data": devices}
+
+    async def _get_screen_size(self, device: str) -> tuple[int, int]:
+        if device in self._screen_sizes:
+            return self._screen_sizes[device]
+        code, out, err = await self._run_adb("-s", device, "shell", "wm", "size")
+        if code != 0:
+            raise RuntimeError(f"Cannot get screen size for {device}: {err}")
+        # Output looks like: Physical size: 1080x2400
+        m = re.search(r"(\d+)x(\d+)", out)
+        if not m:
+            raise RuntimeError(f"Unrecognized wm size output: {out}")
+        size = (int(m.group(1)), int(m.group(2)))
+        self._screen_sizes[device] = size
+        return size
+
+    async def tap(
+        self,
+        devices: str,
+        x: str | float,
+        y: str | float,
+        *,
+        settle_ms: int = 80,
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        if dry_run:
+            await log_bus.info(f"[dry-run] ADB tap device={devices} x={x} y={y}")
+            return {"code": 10000, "message": "DRY_RUN", "data": {"x": x, "y": y}}
+        
+        fx, fy = float(x), float(y)
+        # Convert percentages to absolute pixels if values are small (<=100) and have decimals 
+        # (Based on user request: coordinate format for Panda is percentage, ADB needs pixels)
+        if 0 < fx <= 100 and 0 < fy <= 100 and (isinstance(x, str) and '.' in x or isinstance(y, str) and '.' in y):
+            width, height = await self._get_screen_size(devices)
+            fx = (fx / 100.0) * width
+            fy = (fy / 100.0) * height
+
+        ix, iy = int(fx), int(fy)
+        code, out, err = await self._run_adb("-s", devices, "shell", "input", "tap", str(ix), str(iy))
+        if code != 0:
+            raise RuntimeError(f"ADB tap failed: {err}")
+        if settle_ms:
+            await asyncio.sleep(settle_ms / 1000)
+        return {"code": 10000, "message": "OK", "data": {"x": ix, "y": iy}}
+
+    async def start_apk(self, devices: str, apk: str, *, dry_run: bool = False) -> dict[str, Any]:
+        if dry_run:
+            await log_bus.info(f"[dry-run] ADB startApk {apk} on {devices}")
+            return {"code": 10000, "message": "DRY_RUN", "data": None}
+        code, out, err = await self._run_adb("-s", devices, "shell", "monkey", "-p", apk, "-c", "android.intent.category.LAUNCHER", "1")
+        if code != 0:
+            return {"code": 10001, "message": err, "data": None}
+        return {"code": 10000, "message": "OK", "data": None}
+
+    async def push_event(self, devices: str, type_code: str | int, *, dry_run: bool = False) -> dict[str, Any]:
+        if dry_run:
+            await log_bus.info(f"[dry-run] ADB pushEvent {type_code}")
+            return {"code": 10000, "message": "DRY_RUN", "data": None}
+        code, out, err = await self._run_adb("-s", devices, "shell", "input", "keyevent", str(type_code))
+        if code != 0:
+            return {"code": 10001, "message": err, "data": None}
+        return {"code": 10000, "message": "OK", "data": None}
+
+    async def input_text(self, devices: str, content: str, *, dry_run: bool = False) -> dict[str, Any]:
+        if dry_run:
+            await log_bus.info(f"[dry-run] ADB inputText {content!r}")
+            return {"code": 10000, "message": "DRY_RUN", "data": None}
+        code, out, err = await self._run_adb("-s", devices, "shell", "input", "text", f'"{content}"')
+        if code != 0:
+            return {"code": 10001, "message": err, "data": None}
+        return {"code": 10000, "message": "OK", "data": None}

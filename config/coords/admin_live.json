@@ -1,0 +1,306 @@
+{
+  "profile": "admin_live",
+  "label": "HP 2: Admin Live",
+  "device_serial": "10001",
+  "source_width": null,
+  "source_height": null,
+  "calibrated": true,
+  "notes": "Placeholder percentages only. Calibrate on the real Admin Live phone before execute mode.",
+  "updated_at": "2026-08-11T03:06:40.524881+00:00",
+  "points": {
+    "home.produk": {
+      "x": "25.7",
+      "y": "89.7",
+      "label": "Home · Produk",
+      "group": "home",
+      "calibrated": true
+    },
+    "home.komentar": {
+      "x": "35.0",
+      "y": "88.3",
+      "label": "Home · Komentar",
+      "group": "home",
+      "calibrated": true
+    },
+    "home.voucher": {
+      "x": "45.0",
+      "y": "89.1",
+      "label": "Home · Voucher 30 detik",
+      "group": "home",
+      "calibrated": true
+    },
+    "home.lelang": {
+      "x": "55.3",
+      "y": "88.3",
+      "label": "Home · Lelang",
+      "group": "home",
+      "calibrated": true
+    },
+    "home.iklan_live": {
+      "x": "64.9",
+      "y": "88.5",
+      "label": "Home · Iklan Live",
+      "group": "home",
+      "calibrated": true
+    },
+    "home.lainnya": {
+      "x": "74.7",
+      "y": "88.5",
+      "label": "Home · Lainnya",
+      "group": "home",
+      "calibrated": true
+    },
+    "home.mulai_livestream": {
+      "x": "82",
+      "y": "12",
+      "label": "Home · Mulai Livestream",
+      "group": "home",
+      "calibrated": true
+    },
+    "lelang.time_10": {
+      "x": "28.2",
+      "y": "86.2",
+      "label": "Lelang · 10dtk",
+      "group": "lelang",
+      "calibrated": true
+    },
+    "lelang.time_30": {
+      "x": "43.8",
+      "y": "86.2",
+      "label": "Lelang · 30dtk",
+      "group": "lelang",
+      "calibrated": true
+    },
+    "lelang.time_60": {
+      "x": "56.8",
+      "y": "87.2",
+      "label": "Lelang · 60dtk",
+      "group": "lelang",
+      "calibrated": true
+    },
+    "lelang.time_120": {
+      "x": "70.9",
+      "y": "86.0",
+      "label": "Lelang · 120dtk",
+      "group": "lelang",
+      "calibrated": true
+    },
+    "lelang.mulai": {
+      "x": "50.3",
+      "y": "93.1",
+      "label": "Lelang · Mulai",
+      "group": "lelang",
+      "calibrated": true
+    },
+    "lelang.judul": {
+      "x": "69.4",
+      "y": "55.4",
+      "label": "Lelang · Judul field",
+      "group": "lelang",
+      "calibrated": true
+    },
+    "lelang.close": {
+      "x": "76.2",
+      "y": "49.7",
+      "label": "Lelang · Close (X)",
+      "group": "lelang",
+      "calibrated": true
+    },
+    "iklan.tujuan_gmv_auto": {
+      "x": "34.5",
+      "y": "67.0",
+      "label": "Iklan · GMV Max Auto",
+      "group": "iklan",
+      "calibrated": true
+    },
+    "iklan.tujuan_gmv_roas": {
+      "x": "63.1",
+      "y": "66.8",
+      "label": "Iklan · GMV Max ROAS",
+      "group": "iklan",
+      "calibrated": true
+    },
+    "iklan.durasi_tak_terbatas": {
+      "x": "29.0",
+      "y": "79.5",
+      "label": "Iklan · Tak Terbatas",
+      "group": "iklan",
+      "calibrated": true
+    },
+    "iklan.durasi_1": {
+      "x": "50.3",
+      "y": "79.1",
+      "label": "Iklan · 1 hari",
+      "group": "iklan",
+      "calibrated": true
+    },
+    "iklan.durasi_3": {
+      "x": "66.9",
+      "y": "79.1",
+      "label": "Iklan · 3 hari",
+      "group": "iklan",
+      "calibrated": true
+    },
+    "iklan.durasi_7": {
+      "x": "30.7",
+      "y": "84.7",
+      "label": "Iklan · 7 hari",
+      "group": "iklan",
+      "calibrated": true
+    },
+    "iklan.durasi_14": {
+      "x": "49.3",
+      "y": "84.1",
+      "label": "Iklan · 14 hari",
+      "group": "iklan",
+      "calibrated": true
+    },
+    "iklan.durasi_manual": {
+      "x": "68.4",
+      "y": "83.7",
+      "label": "Iklan · Atur sendiri",
+      "group": "iklan",
+      "calibrated": true
+    },
+    "iklan.aktifkan": {
+      "x": "50",
+      "y": "92",
+      "label": "Iklan · Aktifkan Iklan",
+      "group": "iklan",
+      "calibrated": true
+    },
+    "iklan.close": {
+      "x": "75.2",
+      "y": "26.0",
+      "label": "Iklan · Close banner/sheet",
+      "group": "iklan",
+      "calibrated": true
+    },
+    "lainnya.bonus_koin": {
+      "x": "28.2",
+      "y": "66.2",
+      "label": "Lainnya · Bonus Koin",
+      "group": "lainnya",
+      "calibrated": true
+    },
+    "lainnya.hujan_bonus": {
+      "x": "42.3",
+      "y": "67.0",
+      "label": "Lainnya · Hujan Bonus",
+      "group": "lainnya",
+      "calibrated": true
+    },
+    "lainnya.close": {
+      "x": "75.9",
+      "y": "33.3",
+      "label": "Lainnya · Close",
+      "group": "lainnya",
+      "calibrated": true
+    },
+    "bonus.bagi_250k": {
+      "x": "31.2",
+      "y": "64.8",
+      "label": "Bonus · 250.000",
+      "group": "bonus",
+      "calibrated": true
+    },
+    "bonus.bagi_100k": {
+      "x": "43.5",
+      "y": "65.2",
+      "label": "Bonus · 100.000",
+      "group": "bonus",
+      "calibrated": true
+    },
+    "bonus.bagi_50k": {
+      "x": "55.8",
+      "y": "64.5",
+      "label": "Bonus · 50.000",
+      "group": "bonus",
+      "calibrated": true
+    },
+    "bonus.bagi_25k": {
+      "x": "56.8",
+      "y": "65.6",
+      "label": "Bonus · 25.000",
+      "group": "bonus",
+      "calibrated": true
+    },
+    "bonus.claim_200": {
+      "x": "30.2",
+      "y": "77.5",
+      "label": "Bonus · claim 200",
+      "group": "bonus",
+      "calibrated": true
+    },
+    "bonus.claim_100": {
+      "x": "43.5",
+      "y": "77.5",
+      "label": "Bonus · claim 100",
+      "group": "bonus",
+      "calibrated": true
+    },
+    "bonus.claim_50": {
+      "x": "55.8",
+      "y": "77.5",
+      "label": "Bonus · claim 50",
+      "group": "bonus",
+      "calibrated": true
+    },
+    "bonus.claim_25": {
+      "x": "68.6",
+      "y": "77.0",
+      "label": "Bonus · claim 25",
+      "group": "bonus",
+      "calibrated": true
+    },
+    "bonus.mulai": {
+      "x": "48.8",
+      "y": "93.7",
+      "label": "Bonus · Mulai",
+      "group": "bonus",
+      "calibrated": true
+    },
+    "bonus.close": {
+      "x": "75.7",
+      "y": "42.7",
+      "label": "Bonus · Close",
+      "group": "bonus",
+      "calibrated": true
+    },
+    "hujan.koin_127": {
+      "x": "30.7",
+      "y": "82.2",
+      "label": "Hujan · 127",
+      "group": "hujan",
+      "calibrated": true
+    },
+    "hujan.koin_191": {
+      "x": "48.8",
+      "y": "82.3",
+      "label": "Hujan · 191",
+      "group": "hujan",
+      "calibrated": true
+    },
+    "hujan.koin_255": {
+      "x": "67.6",
+      "y": "82.2",
+      "label": "Hujan · 255",
+      "group": "hujan",
+      "calibrated": true
+    },
+    "hujan.mulai": {
+      "x": "49.6",
+      "y": "91.4",
+      "label": "Hujan · Mulai",
+      "group": "hujan",
+      "calibrated": true
+    },
+    "hujan.close": {
+      "x": "75.9",
+      "y": "62.2",
+      "label": "Hujan · Close",
+      "group": "hujan",
+      "calibrated": true
+    }
+  }
+}
