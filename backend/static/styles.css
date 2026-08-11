@@ -140,6 +140,10 @@ a { color: var(--info); }
   margin-bottom: .35rem;
 }
 .task-card .meta { color: var(--muted); font-size: .78rem; }
+.param-list { margin: 0.4rem 0; display: grid; gap: 0.25rem; font-size: 0.78rem; }
+.param-item { display: flex; align-items: baseline; gap: 0.4rem; padding: 0.25rem 0.5rem; background: #0f172a; border-radius: 6px; border: 1px solid #1e293b; }
+.param-item .key { color: #94a3b8; text-transform: capitalize; width: 110px; flex-shrink: 0; }
+.param-item .val { color: #e2e8f0; font-family: var(--mono); font-weight: 500; word-break: break-all;}
 .pill {
   display: inline-block; padding: .15rem .45rem; border-radius: 999px;
   background: var(--panel-2); font-size: .72rem; color: var(--muted);

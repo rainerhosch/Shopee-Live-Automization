@@ -135,6 +135,7 @@
     $("bot-summary").textContent = `Status: ${state.bot.status} · device: ${state.bot.device || "-"
       } · profile: ${state.bot.profile} · dry_run: ${state.bot.dry_run}`;
     renderTasks(state.bot.tasks || []);
+    renderQueue(state.bot.queue || [], state.bot.active_task);
   }
 
   function updateBadges() {
@@ -146,6 +147,58 @@
     );
     const dry = $("select-dry").value === "true";
     setBadge($("badge-dry"), dry ? "warn" : "ok", dry ? "Dry-run ON" : "LIVE taps");
+  }
+
+  function formatParams(params) {
+    if (!params || Object.keys(params).length === 0) return `<div class="muted" style="margin:.5rem 0">No parameters</div>`;
+    let html = '<div class="param-list">';
+    for (const [k, v] of Object.entries(params)) {
+      if (v === null || v === "") continue;
+      const keyStr = escapeHtml(k.replace(/_/g, ' '));
+      const valStr = escapeHtml(String(v));
+      html += `<div class="param-item" style="font-size:10px;"><span class="key" style="color:#94a3b8; width:120px; display:inline-block; text-transform:capitalize;">${keyStr}:</span><span class="val" style="color:#e2e8f0; font-weight:500;">${valStr}</span></div>`;
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function renderQueue(queue, activeTask) {
+    const activeLabel = $("active-task-label");
+    if (activeTask) {
+      activeLabel.innerHTML = `<strong>${escapeHtml(activeTask.type)}</strong> <span>(${escapeHtml(activeTask.id)})</span>`;
+      activeLabel.style.color = "var(--ok)";
+    } else {
+      activeLabel.innerHTML = "None";
+      activeLabel.style.color = "inherit";
+    }
+
+    const el = $("queue-list");
+    if (!queue.length) {
+      el.innerHTML = `<div class="muted">Queue empty.</div>`;
+      return;
+    }
+    el.innerHTML = "";
+    queue.forEach((t) => {
+      const card = document.createElement("div");
+      card.className = "task-card";
+      card.style.padding = "0.5rem 0.75rem";
+      card.innerHTML = `
+        <header style="margin-bottom:0.25rem;">
+          <strong>${escapeHtml(t.type)}</strong>
+          <span class="muted" style="font-size:10px;">${t.manual ? 'Manual' : 'Scheduled'}</span>
+        </header>
+        <div class="btn-row" style="margin-top:0.25rem">
+          <button class="btn btn-sm btn-danger" data-del-q="${t.id}">Batalkan</button>
+        </div>`;
+      el.appendChild(card);
+    });
+    
+    el.querySelectorAll("[data-del-q]").forEach((btn) => {
+      btn.onclick = async () => {
+        await api(`/api/queue/${btn.dataset.delQ}`, { method: "DELETE" });
+        refreshBot();
+      };
+    });
   }
 
   function renderTasks(tasks) {
@@ -163,28 +216,59 @@
           <strong>${escapeHtml(t.type)}</strong>
           <span class="pill ${t.enabled ? "on" : "off"}">${t.enabled ? "enabled" : "disabled"}</span>
         </header>
-        <div class="meta">id=${escapeHtml(t.id)} · every ${t.interval_sec}s · runs=${t.run_count || 0}</div>
-        <div class="meta">${escapeHtml(JSON.stringify(t.params || {}))}</div>
+        <div class="meta">id=${escapeHtml(t.id)} · interval ${t.interval_sec}s · runs=${t.run_count || 0}</div>
+        ${formatParams(t.params)}
         ${t.last_error ? `<div class="meta" style="color:var(--err)">err: ${escapeHtml(t.last_error)}</div>` : ""}
         <div class="btn-row" style="margin-top:.45rem">
-          <button class="btn btn-sm" data-toggle="${t.id}">${t.enabled ? "Disable" : "Enable"}</button>
-          <button class="btn btn-sm btn-danger" data-del="${t.id}">Delete</button>
+          <button class="btn btn-sm btn-ok" data-action="start" data-id="${t.id}" ${t.enabled ? 'disabled' : ''}>Auto Pilot</button>
+          <button class="btn btn-sm btn-warn" data-action="pause" data-id="${t.id}" ${!t.enabled ? 'disabled' : ''}>Pause</button>
+          <button class="btn btn-sm btn-primary" data-action="run-now" data-id="${t.id}">Run Now</button>
+          <button class="btn btn-sm btn-warn" data-action="stop" data-id="${t.id}">Stop</button>
+          <button class="btn btn-sm btn-danger" data-del="${t.id}">Hapus</button>
         </div>`;
       el.appendChild(card);
     });
+    
     el.querySelectorAll("[data-del]").forEach((btn) => {
       btn.onclick = async () => {
         await api(`/api/tasks/${btn.dataset.del}`, { method: "DELETE" });
         refreshBot();
       };
     });
-    el.querySelectorAll("[data-toggle]").forEach((btn) => {
+    el.querySelectorAll("button[data-action]").forEach((btn) => {
       btn.onclick = async () => {
-        const task = (state.bot.tasks || []).find((x) => x.id === btn.dataset.toggle);
-        if (!task) return;
-        await api(`/api/tasks/${task.id}`, {
+        const id = btn.dataset.id;
+        const act = btn.dataset.action;
+        
+        if (act === "run-now") {
+          const task = tasks.find(x => x.id === id);
+          if (!task) return;
+          try {
+            await api("/api/tasks/run-once", {
+              method: "POST",
+              body: JSON.stringify({
+                type: task.type,
+                params: task.params,
+                device: $("input-device").value.trim() || null,
+                profile: $("select-profile").value,
+                dry_run: $("select-dry").value === "true",
+              }),
+            });
+            refreshBot();
+          } catch (err) {
+            alert(err.message);
+          }
+          return;
+        }
+
+        let patch = {};
+        if (act === "start") patch = { enabled: true };
+        else if (act === "pause") patch = { enabled: false };
+        else if (act === "stop") patch = { enabled: false, run_count: 0 };
+        
+        await api(`/api/tasks/${id}`, {
           method: "PATCH",
-          body: JSON.stringify({ enabled: !task.enabled }),
+          body: JSON.stringify(patch),
         });
         refreshBot();
       };
@@ -200,6 +284,8 @@
         params: {
           judul: $("lelang-judul").value || null,
           harga: $("lelang-harga").value || null,
+          kelipatan_harga: $("lelang-kelipatan-harga").value || null,
+          max_harga: $("lelang-max-harga").value || null,
           mode: $("lelang-mode").value,
           peserta: $("lelang-peserta").value,
           batas_waktu: $("lelang-batas").value,
@@ -215,6 +301,8 @@
           durasi_hari: $("iklan-durasi-hari").value,
           durasi_jam: $("iklan-durasi-jam").value,
           modal: num($("iklan-modal").value, 10000),
+          kelipatan_modal: num($("iklan-kelipatan-modal").value, null),
+          max_modal: num($("iklan-max-modal").value, null),
         },
       };
     }
@@ -496,6 +584,12 @@
     $("btn-clear-tasks").onclick = async () => {
       if (!confirm("Clear all scheduled tasks?")) return;
       await api("/api/tasks", { method: "DELETE" });
+      refreshBot();
+    };
+
+    $("btn-clear-queue").onclick = async () => {
+      if (!confirm("Clear execution queue?")) return;
+      await api("/api/queue", { method: "DELETE" });
       refreshBot();
     };
 

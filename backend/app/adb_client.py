@@ -48,7 +48,7 @@ class AdbClient:
         if code != 0:
             raise RuntimeError(f"Failed to start ADB server: {err}")
         self.connected = True
-        await log_bus.info(f"ADB connected using {self.get_adb_path()}")
+        await log_bus.info(f"\nADB connected using {self.get_adb_path()}")
 
     async def close(self) -> None:
         self.connected = False

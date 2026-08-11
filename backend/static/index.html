@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Shopee Live Bot · Admin Panel</title>
+  <title>Shopee Live Bot Manager</title>
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
 
@@ -13,7 +13,7 @@
     <div class="brand">
       <div class="brand-mark">S</div>
       <div>
-        <h1>Shopee Live Bot</h1>
+        <h1>Shopee Live Bot Manager</h1>
         <p>Manager Panel · Support Direct ADB listener or Panda screen projection.</p>
       </div>
     </div>
@@ -40,7 +40,7 @@
           <label>Connection Mode</label>
           <select id="select-conn-mode">
             <option value="adb">Pure ADB (USB/WiFi)</option>
-            <option value="panda">Panda WebSocket</option>
+            <option value="panda" disabled>Panda WebSocket</option>
           </select>
         </div>
         <div class="field" id="field-adb-path">
@@ -75,15 +75,6 @@
         </div>
       </section>
 
-      <section class="panel">
-        <h2>Bot Control</h2>
-        <div class="btn-row">
-          <button class="btn btn-ok" id="btn-start">Start Bot</button>
-          <button class="btn btn-warn" id="btn-pause">Pause</button>
-          <button class="btn btn-danger" id="btn-stop">Stop All</button>
-        </div>
-        <p class="muted" id="bot-summary" style="margin-top:.75rem">Status: stopped</p>
-      </section>
     </div>
 
     <!-- CENTER -->
@@ -105,9 +96,19 @@
             <label>Judul Lelang</label>
             <input id="lelang-judul" placeholder="Lelang1" required />
           </div>
-          <div class="field">
-            <label>Harga</label>
-            <input id="lelang-harga" placeholder="Contoh: 50000" required />
+          <div class="field-row" style="grid-template-columns: 1fr 1fr 1fr;">
+            <div class="field">
+              <label>Harga</label>
+              <input id="lelang-harga" placeholder="Contoh: 50000" required />
+            </div>
+            <div class="field">
+              <label>Kelipatan</label>
+              <input id="lelang-kelipatan-harga" type="number" placeholder="Contoh: 10000" />
+            </div>
+            <div class="field">
+              <label>Max Harga</label>
+              <input id="lelang-max-harga" type="number" placeholder="Contoh: 100000" />
+            </div>
           </div>
           <div class="field-row">
             <div class="field">
@@ -174,9 +175,19 @@
                 <option>4 Jam</option>
               </select>
             </div>
+          </div>
+          <div class="field-row" style="grid-template-columns: 1fr 1fr 1fr;">
             <div class="field">
               <label>Modal Harian (Rp)</label>
               <input type="number" id="iklan-modal" value="25000" />
+            </div>
+            <div class="field">
+              <label>Kelipatan</label>
+              <input type="number" id="iklan-kelipatan-modal" placeholder="5000" />
+            </div>
+            <div class="field">
+              <label>Max Modal</label>
+              <input type="number" id="iklan-max-modal" placeholder="50000" />
             </div>
           </div>
           <div class="field">
@@ -242,9 +253,30 @@
 
       <section class="panel">
         <div class="section-title">
-          <h2 style="margin:0">Scheduled Tasks</h2>
-          <button class="btn btn-sm btn-danger" id="btn-clear-tasks">Clear all</button>
+          <h2 style="margin:0">Active Execution & Queue</h2>
+          <button class="btn btn-sm btn-danger" id="btn-clear-queue">Clear Queue</button>
         </div>
+        <div style="margin-top: .75rem;">
+          <div style="margin-bottom:.5rem;">
+            <strong>Running Task: </strong> <span id="active-task-label" class="muted">None</span>
+          </div>
+          <div id="queue-list" class="stack" style="gap:.5rem;">
+            <div class="muted">Queue empty.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-title">
+          <h2 style="margin:0">Scheduled Tasks</h2>
+          <div>
+            <button class="btn btn-sm btn-ok" id="btn-start">Start All</button>
+            <button class="btn btn-sm btn-warn" id="btn-pause">Pause All</button>
+            <button class="btn btn-sm btn-danger" id="btn-stop">Stop All</button>
+            <button class="btn btn-sm" id="btn-clear-tasks">Clear all</button>
+          </div>
+        </div>
+        <p class="muted" id="bot-summary" style="margin-top:0.25rem; margin-bottom: 0.75rem;">Status: stopped</p>
         <div id="task-list">
           <div class="muted">No tasks yet.</div>
         </div>

@@ -147,6 +147,18 @@ async def list_tasks() -> list[dict[str, Any]]:
     return list(bot.tasks.values())
 
 
+@app.delete("/api/queue")
+async def clear_queue() -> dict[str, Any]:
+    bot.queue.clear()
+    return bot.snapshot()
+
+
+@app.delete("/api/queue/{task_id}")
+async def remove_from_queue(task_id: str) -> dict[str, Any]:
+    bot.queue = [t for t in bot.queue if t["id"] != task_id]
+    return bot.snapshot()
+
+
 @app.get("/api/screen")
 async def get_screen(device: str):
     try:

@@ -24,6 +24,9 @@ class BotScheduler:
         self._stop_event = asyncio.Event()
         self.last_run: dict[str, float] = {}
         self._settings: dict[str, Any] = cfg.load_settings()
+        self.queue: list[dict[str, Any]] = []
+        self.active_task: dict[str, Any] | None = None
+        self._worker_task: asyncio.Task | None = None
 
     def snapshot(self) -> dict[str, Any]:
         return {
@@ -32,6 +35,8 @@ class BotScheduler:
             "profile": self.profile_name,
             "dry_run": self.dry_run,
             "tasks": list(self.tasks.values()),
+            "queue": self.queue,
+            "active_task": self.active_task,
             "panda_connected": device_manager.connected,
             "settings": self._settings,
         }
@@ -65,7 +70,7 @@ class BotScheduler:
         if task_id not in self.tasks:
             raise KeyError(task_id)
         task = self.tasks[task_id]
-        for k in ("enabled", "interval_sec", "params"):
+        for k in ("enabled", "interval_sec", "params", "run_count"):
             if k in patch and patch[k] is not None:
                 task[k] = patch[k]
         return task
@@ -106,6 +111,7 @@ class BotScheduler:
             raise RuntimeError(f"Cannot connect: {exc}") from exc
 
         self._runner_task = asyncio.create_task(self._loop(), name="bot-scheduler")
+        self._worker_task = asyncio.create_task(self._worker(), name="bot-worker")
         await log_bus.info(
             f"Bot started device={self.device} profile={self.profile_name} dry_run={self.dry_run}"
         )
@@ -127,6 +133,15 @@ class BotScheduler:
             except asyncio.CancelledError:
                 pass
         self._runner_task = None
+        if self._worker_task and not self._worker_task.done():
+            self._worker_task.cancel()
+            try:
+                await self._worker_task
+            except asyncio.CancelledError:
+                pass
+        self._worker_task = None
+        self.queue.clear()
+        self.active_task = None
         await log_bus.warn("Bot stopped — queue cleared of in-flight runner")
         return self.snapshot()
 
@@ -142,21 +157,77 @@ class BotScheduler:
                         interval = int(task.get("interval_sec") or 300)
                         last = self.last_run.get(tid, 0)
                         if now - last >= interval:
-                            try:
-                                await self.execute_task(task)
+                            if self.active_task is not None or len(self.queue) > 0:
+                                pass # Jangan update last_run, biarkan mencoba lagi detik berikutnya
+                            else:
+                                self.queue.append(task)
                                 self.last_run[tid] = time.time()
-                                task["run_count"] = int(task.get("run_count") or 0) + 1
-                                task["last_error"] = None
-                            except Exception as exc:
-                                task["last_error"] = str(exc)
-                                await log_bus.error(f"Task {tid} ({task['type']}) failed: {exc}")
-                                self.last_run[tid] = time.time()
-                await asyncio.sleep(1)
+                await asyncio.sleep(1.0)
         except asyncio.CancelledError:
-            raise
-        finally:
-            if self.status != "paused":
-                self.status = "stopped"
+            pass
+
+    async def _worker(self) -> None:
+        try:
+            while not self._stop_event.is_set():
+                if self.queue and self.status == "running":
+                    self.active_task = self.queue.pop(0)
+                    try:
+                        await self._process_task(self.active_task)
+                    finally:
+                        self.active_task = None
+                else:
+                    await asyncio.sleep(1.0)
+        except asyncio.CancelledError:
+            pass
+
+    async def _process_task(self, task: dict[str, Any]) -> None:
+        tid = task["id"]
+        try:
+            await self.execute_task(task)
+            if tid in self.tasks:
+                self.tasks[tid]["run_count"] = int(self.tasks[tid].get("run_count") or 0) + 1
+                self.tasks[tid]["last_error"] = None
+            else:
+                task["run_count"] = int(task.get("run_count") or 0) + 1
+                task["last_error"] = None
+                
+            # Incremental logic
+            if task["type"] == "lelang":
+                params = self.tasks[tid]["params"] if tid in self.tasks else task["params"]
+                harga = params.get("harga")
+                kel = params.get("kelipatan_harga")
+                max_val = params.get("max_harga")
+                if harga and kel:
+                    try:
+                        new_harga = int(harga) + int(kel)
+                        if max_val:
+                            max_int = int(max_val)
+                            if new_harga > max_int:
+                                new_harga = max_int
+                        params["harga"] = str(new_harga)
+                    except ValueError:
+                        pass
+            elif task["type"] == "iklan_live":
+                params = self.tasks[tid]["params"] if tid in self.tasks else task["params"]
+                modal = params.get("modal")
+                kel = params.get("kelipatan_modal")
+                max_val = params.get("max_modal")
+                if modal and kel:
+                    try:
+                        new_modal = int(modal) + int(kel)
+                        if max_val:
+                            max_int = int(max_val)
+                            if new_modal > max_int:
+                                new_modal = max_int
+                        params["modal"] = new_modal
+                    except ValueError:
+                        pass
+        except Exception as exc:
+            if tid in self.tasks:
+                self.tasks[tid]["last_error"] = str(exc)
+            else:
+                task["last_error"] = str(exc)
+            await log_bus.error(f"Task {tid} ({task['type']}) failed: {exc}")
 
     async def execute_task(self, task: dict[str, Any], *, dry_run_override: bool | None = None) -> list[dict[str, Any]]:
         if not self.device:
@@ -246,8 +317,11 @@ class BotScheduler:
             await device_manager.ensure()
         except Exception:
             await device_manager.connect()
-        task = {"id": "once", "type": task_type, "params": params or {}, "enabled": True}
-        return await self.execute_task(task, dry_run_override=dry_run)
+        task_id = "manual_" + str(uuid.uuid4())[:4]
+        task = {"id": task_id, "type": task_type, "params": params or {}, "enabled": True, "manual": True}
+        self.queue.append(task)
+        await log_bus.info(f"Task {task_id} added to manual queue.")
+        return []
 
 
 bot = BotScheduler()
