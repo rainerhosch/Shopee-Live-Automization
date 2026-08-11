@@ -1,18 +1,20 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Shopee Live Bot · Admin Panel</title>
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
+
 <body>
   <header class="app-header">
     <div class="brand">
       <div class="brand-mark">S</div>
       <div>
         <h1>Shopee Live Bot</h1>
-        <p>Panda screen projection · Manager Panel</p>
+        <p>Manager Panel · Support Direct ADB listener or Panda screen projection.</p>
       </div>
     </div>
     <div class="badges">
@@ -176,7 +178,7 @@
             </div>
             <div class="field">
               <label>Modal Harian (Rp)</label>
-              <input type="number" id="iklan-modal" value="10000" />
+              <input type="number" id="iklan-modal" value="25000" />
             </div>
           </div>
           <div class="field">
@@ -226,7 +228,8 @@
         </div>
 
         <div id="form-open_shopee" class="task-form hidden">
-          <p class="muted">Menjalankan startApk Shopee sekali (atau terjadwal). Navigasi ke live studio masih manual / butuh kalibrasi lanjutan.</p>
+          <p class="muted">Menjalankan startApk Shopee sekali (atau terjadwal). Navigasi ke live studio masih manual /
+            butuh kalibrasi lanjutan.</p>
           <div class="field">
             <label>Interval (detik)</label>
             <input id="open-interval" type="number" value="3600" min="10" />
@@ -244,13 +247,19 @@
           <h2 style="margin:0">Scheduled Tasks</h2>
           <button class="btn btn-sm btn-danger" id="btn-clear-tasks">Clear all</button>
         </div>
-        <div id="task-list"><div class="muted">No tasks yet.</div></div>
+        <div id="task-list">
+          <div class="muted">No tasks yet.</div>
+        </div>
       </section>
 
       <section class="panel" id="calibration-panel">
         <div class="section-title">
           <h2 style="margin:0">Coordinate Calibration · Admin Live</h2>
           <div>
+            <button class="btn btn-sm" id="btn-cal-export">📤 Export</button>
+            <button class="btn btn-sm" id="btn-cal-import" onclick="document.getElementById('file-import').click()">📥
+              Import</button>
+            <input type="file" id="file-import" accept=".json" style="display:none" />
             <button class="btn btn-sm" id="btn-cal-capture">📷 Live Capture</button>
             <span class="muted" id="cal-progress-label">0 / 0</span>
           </div>
@@ -327,4 +336,5 @@
 
   <script src="/static/app.js"></script>
 </body>
+
 </html>

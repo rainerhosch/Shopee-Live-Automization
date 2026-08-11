@@ -162,7 +162,7 @@ class BotScheduler:
         if not self.device:
             raise ValueError("No device selected")
         settings = cfg.load_settings()
-        profile = cfg.load_profile(self.profile_name)
+        profile = cfg.load_profile(self.profile_name, self.device)
         steps = build_steps(task["type"], profile, task.get("params") or {}, settings)
         dry = self.dry_run if dry_run_override is None else dry_run_override
         settle = int(settings.get("tap_settle_ms", 80))

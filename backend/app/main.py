@@ -4,7 +4,7 @@ import asyncio
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, UploadFile, File
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 
@@ -228,26 +228,26 @@ async def profiles() -> dict[str, Any]:
 
 
 @app.get("/api/profiles/{name}")
-async def get_profile(name: str) -> dict[str, Any]:
+async def get_profile(name: str, device: str = None) -> dict[str, Any]:
     try:
-        return cfg.load_profile(name)
+        return cfg.load_profile(name, device)
     except FileNotFoundError as exc:
         raise HTTPException(404, str(exc)) from exc
 
 
 @app.patch("/api/profiles/{name}")
-async def patch_profile(name: str, body: ProfileMetaUpdate) -> dict[str, Any]:
+async def patch_profile(name: str, body: ProfileMetaUpdate, device: str = None) -> dict[str, Any]:
     try:
-        profile = cfg.load_profile(name)
+        profile = cfg.load_profile(name, device)
     except FileNotFoundError as exc:
         raise HTTPException(404, str(exc)) from exc
     data = body.model_dump(exclude_none=True)
     profile.update(data)
-    return cfg.save_profile(name, profile)
+    return cfg.save_profile(name, profile, device)
 
 
 @app.post("/api/profiles/{name}/points")
-async def calibrate_point(name: str, body: CalibratePoint) -> dict[str, Any]:
+async def calibrate_point(name: str, body: CalibratePoint, device: str = None) -> dict[str, Any]:
     try:
         profile = cfg.set_point(
             name,
@@ -256,34 +256,53 @@ async def calibrate_point(name: str, body: CalibratePoint) -> dict[str, Any]:
             body.y,
             label=body.label,
             group=body.group,
+            device=device,
         )
-    except FileNotFoundError as exc:
-        raise HTTPException(404, str(exc)) from exc
-    except KeyError as exc:
+    except Exception as exc:
         raise HTTPException(400, str(exc)) from exc
 
     tap_result = None
     if body.test_tap:
-        device = body.device or bot.device or cfg.load_settings().get("default_device")
-        if not device:
+        test_dev = device or body.device or bot.device or cfg.load_settings().get("default_device")
+        if not test_dev:
             raise HTTPException(400, "device required for test_tap")
         try:
             await device_manager.ensure()
         except Exception:
             await device_manager.connect()
         dry = bool(cfg.load_settings().get("dry_run", True))
-        # Calibration test taps should hit the real device unless user keeps dry_run
-        tap_result = await device_manager.tap(
-            device,
-            body.x,
-            body.y,
-            settle_ms=int(cfg.load_settings().get("tap_settle_ms", 80)),
-            dry_run=dry,
-        )
-        await log_bus.info(
-            f"Calibrate test-tap {body.key} @ ({body.x},{body.y}) device={device} dry_run={dry}",
-            response=tap_result,
-        )
+        tap_result = await device_manager.tap(test_dev, body.x, body.y, dry_run=dry)
+
+    return {"ok": True, "profile": profile, "tap": tap_result}
+
+
+@app.get("/api/profiles/{name}/export")
+async def export_profile(name: str, device: str = None):
+    try:
+        path = cfg.profile_path(name, device)
+        if not path.exists():
+            path = cfg.profile_path(name)
+        if not path.exists():
+            raise FileNotFoundError(f"Profile {name} not found")
+        filename = f"{name}_{device}.json" if device else f"{name}.json"
+        return FileResponse(path, media_type="application/json", filename=filename)
+    except Exception as exc:
+        raise HTTPException(404, str(exc)) from exc
+
+
+@app.post("/api/profiles/{name}/import")
+async def import_profile(name: str, file: UploadFile = File(...), device: str = None) -> dict[str, Any]:
+    try:
+        content = await file.read()
+        import json
+        data = json.loads(content.decode("utf-8"))
+        if "points" not in data:
+            raise ValueError("Invalid profile file: missing 'points'")
+        cfg.save_profile(name, data, device)
+        return {"ok": True}
+    except Exception as exc:
+        raise HTTPException(400, str(exc)) from exc
+
 
     await log_bus.info(f"Calibrated point {body.key} = ({body.x}, {body.y}) on profile {name}")
     return {"profile": profile, "tap_result": tap_result}
@@ -308,10 +327,10 @@ async def manual_tap(body: TapRequest) -> dict[str, Any]:
 
 
 @app.get("/api/calibration/checklist")
-async def calibration_checklist(profile: str = "admin_live") -> dict[str, Any]:
+async def calibration_checklist(profile: str = "admin_live", device: str = None) -> dict[str, Any]:
     """Ordered calibration points for Admin Live HP."""
     try:
-        data = cfg.load_profile(profile)
+        data = cfg.load_profile(profile, device)
     except FileNotFoundError as exc:
         raise HTTPException(404, str(exc)) from exc
 

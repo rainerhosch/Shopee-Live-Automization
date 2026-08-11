@@ -6,7 +6,7 @@
   "source_height": null,
   "calibrated": true,
   "notes": "Placeholder percentages only. Calibrate on the real Admin Live phone before execute mode.",
-  "updated_at": "2026-08-11T08:13:23.694152+00:00",
+  "updated_at": "2026-08-11T08:13:23.451586+00:00",
   "points": {
     "home.produk": {
       "x": "25.7",
@@ -58,7 +58,7 @@
       "calibrated": true
     },
     "lelang.time_10": {
-      "x": "28.2",
+      "x": "22.7",
       "y": "86.2",
       "label": "Lelang · 10dtk",
       "group": "lelang",
@@ -73,14 +73,14 @@
     },
     "lelang.time_60": {
       "x": "56.8",
-      "y": "87.2",
+      "y": "85.8",
       "label": "Lelang · 60dtk",
       "group": "lelang",
       "calibrated": true
     },
     "lelang.time_120": {
-      "x": "70.9",
-      "y": "86.0",
+      "x": "76.9",
+      "y": "86.2",
       "label": "Lelang · 120dtk",
       "group": "lelang",
       "calibrated": true

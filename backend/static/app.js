@@ -252,7 +252,8 @@
   // ---- Calibration ----
   async function loadCalibration() {
     const profile = $("select-profile").value || "admin_live";
-    state.calibration = await api(`/api/calibration/checklist?profile=${encodeURIComponent(profile)}`);
+    const deviceParam = $("input-device").value ? `&device=${encodeURIComponent($("input-device").value.trim())}` : "";
+    state.calibration = await api(`/api/calibration/checklist?profile=${encodeURIComponent(profile)}${deviceParam}`);
     state.refImages = state.calibration.reference_images || {};
     const done = state.calibration.progress.done;
     const total = state.calibration.progress.total;
@@ -347,6 +348,7 @@
     const x = $("cal-x").value;
     const y = $("cal-y").value;
     const device = $("input-device").value.trim();
+    const deviceParam = device ? `?device=${encodeURIComponent(device)}` : "";
     const body = {
       key,
       x,
@@ -356,7 +358,7 @@
       device: device || null,
     };
     try {
-      await api(`/api/profiles/${encodeURIComponent(profile)}/points`, {
+      await api(`/api/profiles/${encodeURIComponent(profile)}/points${deviceParam}`, {
         method: "POST",
         body: JSON.stringify(body),
       });
@@ -500,6 +502,33 @@
 
     $("btn-clear-logs").onclick = () => {
       $("log-box").innerHTML = "";
+    };
+
+    $("btn-cal-export").onclick = () => {
+      const profile = $("select-profile").value || "admin_live";
+      const deviceParam = $("input-device").value ? `?device=${encodeURIComponent($("input-device").value.trim())}` : "";
+      window.open(`/api/profiles/${encodeURIComponent(profile)}/export${deviceParam}`, "_blank");
+    };
+
+    $("file-import").onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const profile = $("select-profile").value || "admin_live";
+      const deviceParam = $("input-device").value ? `?device=${encodeURIComponent($("input-device").value.trim())}` : "";
+      const formData = new FormData();
+      formData.append("file", file);
+      try {
+        const res = await fetch(`/api/profiles/${encodeURIComponent(profile)}/import${deviceParam}`, {
+          method: "POST",
+          body: formData,
+        });
+        if (!res.ok) throw new Error(await res.text());
+        alert("Calibration imported successfully!");
+        loadCalibration();
+      } catch (err) {
+        alert("Import failed: " + err.message);
+      }
+      e.target.value = "";
     };
 
     $("cal-group").onchange = () => {

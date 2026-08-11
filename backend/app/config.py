@@ -50,23 +50,34 @@ def list_profiles() -> list[str]:
     return sorted(p.stem for p in COORDS_DIR.glob("*.json"))
 
 
-def profile_path(name: str) -> Path:
+def profile_path(name: str, device: str | None = None) -> Path:
     safe = name.replace("..", "").replace("/", "").replace("\\", "")
+    if device:
+        safe_dev = device.replace("..", "").replace("/", "").replace("\\", "").replace(":", "_")
+        return COORDS_DIR / f"{safe}_{safe_dev}.json"
     return COORDS_DIR / f"{safe}.json"
 
 
-def load_profile(name: str) -> dict[str, Any]:
-    path = profile_path(name)
+def load_profile(name: str, device: str | None = None) -> dict[str, Any]:
+    path = profile_path(name, device)
+    if device and not path.exists():
+        path = profile_path(name)
     if not path.exists():
         raise FileNotFoundError(f"Coordinate profile not found: {name}")
-    return _read_json(path)
+    data = _read_json(path)
+    # Automatically seed device info if missing
+    if device and not data.get("device_serial"):
+        data["device_serial"] = device
+    return data
 
 
-def save_profile(name: str, data: dict[str, Any]) -> dict[str, Any]:
+def save_profile(name: str, data: dict[str, Any], device: str | None = None) -> dict[str, Any]:
     data = deepcopy(data)
     data["profile"] = name
+    if device:
+        data["device_serial"] = device
     data["updated_at"] = datetime.now(timezone.utc).isoformat()
-    _write_json(profile_path(name), data)
+    _write_json(profile_path(name, device), data)
     return data
 
 
@@ -79,8 +90,9 @@ def set_point(
     label: str | None = None,
     group: str | None = None,
     mark_partial: bool = True,
+    device: str | None = None,
 ) -> dict[str, Any]:
-    profile = load_profile(name)
+    profile = load_profile(name, device)
     points = profile.setdefault("points", {})
     existing = points.get(key, {})
     points[key] = {
@@ -94,7 +106,7 @@ def set_point(
         # Full calibrated flag only when all points marked calibrated
         all_done = all(bool(p.get("calibrated")) for p in points.values())
         profile["calibrated"] = all_done
-    return save_profile(name, profile)
+    return save_profile(name, profile, device)
 
 
 def get_point(profile: dict[str, Any], key: str) -> dict[str, str]:
