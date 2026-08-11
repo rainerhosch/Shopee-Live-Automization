@@ -1,12 +1,12 @@
 {
   "profile": "admin_live",
   "label": "HP 2: Admin Live",
-  "device_serial": "10001",
+  "device_serial": "325F51716980",
   "source_width": null,
   "source_height": null,
   "calibrated": true,
   "notes": "Placeholder percentages only. Calibrate on the real Admin Live phone before execute mode.",
-  "updated_at": "2026-08-11T03:06:40.524881+00:00",
+  "updated_at": "2026-08-11T07:33:53.963204+00:00",
   "points": {
     "home.produk": {
       "x": "25.7",
@@ -37,8 +37,8 @@
       "calibrated": true
     },
     "home.iklan_live": {
-      "x": "64.9",
-      "y": "88.5",
+      "x": "68.1",
+      "y": "88.3",
       "label": "Home · Iklan Live",
       "group": "home",
       "calibrated": true
@@ -99,6 +99,55 @@
       "group": "lelang",
       "calibrated": true
     },
+    "lelang.harga": {
+      "x": "71.6",
+      "y": "62.0",
+      "label": "Lelang · Harga field",
+      "group": "lelang",
+      "calibrated": true
+    },
+    "lelang.mode": {
+      "x": "66.9",
+      "y": "67.5",
+      "label": "Lelang · Mode",
+      "group": "lelang",
+      "calibrated": true
+    },
+    "lelang.mode_acak": {
+      "x": "70.9",
+      "y": "68.1",
+      "label": "Lelang · Mode Acak",
+      "group": "lelang",
+      "calibrated": true
+    },
+    "lelang.mode_tercepat": {
+      "x": "72.4",
+      "y": "68.1",
+      "label": "Lelang · Mode Tercepat",
+      "group": "lelang",
+      "calibrated": true
+    },
+    "lelang.peserta": {
+      "x": "67.4",
+      "y": "74.3",
+      "label": "Lelang · Peserta",
+      "group": "lelang",
+      "calibrated": true
+    },
+    "lelang.peserta_semua": {
+      "x": "48.8",
+      "y": "78.1",
+      "label": "Lelang · Peserta Semua",
+      "group": "lelang",
+      "calibrated": true
+    },
+    "lelang.peserta_followers": {
+      "x": "48.0",
+      "y": "82.9",
+      "label": "Lelang · Peserta Pengikut",
+      "group": "lelang",
+      "calibrated": true
+    },
     "lelang.close": {
       "x": "76.2",
       "y": "49.7",
@@ -106,10 +155,24 @@
       "group": "lelang",
       "calibrated": true
     },
+    "iklan.tujuan_dropdown": {
+      "x": "74.2",
+      "y": "49.1",
+      "label": "Iklan · Buka Opsi Tujuan",
+      "group": "iklan",
+      "calibrated": true
+    },
     "iklan.tujuan_gmv_auto": {
       "x": "34.5",
       "y": "67.0",
       "label": "Iklan · GMV Max Auto",
+      "group": "iklan",
+      "calibrated": true
+    },
+    "iklan.tujuan_penonton": {
+      "x": "23.9",
+      "y": "83.5",
+      "label": "Iklan · Tingkatkan Penonton",
       "group": "iklan",
       "calibrated": true
     },
@@ -120,51 +183,121 @@
       "group": "iklan",
       "calibrated": true
     },
+    "iklan.tujuan_konfirmasi": {
+      "x": "48.8",
+      "y": "96.0",
+      "label": "Iklan · Tujuan Konfirmasi",
+      "group": "iklan",
+      "calibrated": true
+    },
     "iklan.durasi_tak_terbatas": {
-      "x": "29.0",
-      "y": "79.5",
+      "x": "32.5",
+      "y": "55.7",
       "label": "Iklan · Tak Terbatas",
       "group": "iklan",
       "calibrated": true
     },
     "iklan.durasi_1": {
-      "x": "50.3",
-      "y": "79.1",
+      "x": "49.6",
+      "y": "55.7",
       "label": "Iklan · 1 hari",
       "group": "iklan",
       "calibrated": true
     },
     "iklan.durasi_3": {
       "x": "66.9",
-      "y": "79.1",
+      "y": "55.7",
       "label": "Iklan · 3 hari",
       "group": "iklan",
       "calibrated": true
     },
     "iklan.durasi_7": {
-      "x": "30.7",
-      "y": "84.7",
+      "x": "32.0",
+      "y": "60.5",
       "label": "Iklan · 7 hari",
       "group": "iklan",
       "calibrated": true
     },
     "iklan.durasi_14": {
-      "x": "49.3",
-      "y": "84.1",
+      "x": "49.8",
+      "y": "60.5",
       "label": "Iklan · 14 hari",
       "group": "iklan",
       "calibrated": true
     },
     "iklan.durasi_manual": {
-      "x": "68.4",
-      "y": "83.7",
+      "x": "66.9",
+      "y": "60.8",
       "label": "Iklan · Atur sendiri",
       "group": "iklan",
       "calibrated": true
     },
+    "iklan.jam_all": {
+      "x": "32.0",
+      "y": "72.8",
+      "label": "Iklan · Jam: Sepanjang Hari",
+      "group": "iklan",
+      "calibrated": true
+    },
+    "iklan.jam_30m": {
+      "x": "49.8",
+      "y": "72.8",
+      "label": "Iklan · Jam: 30 Menit",
+      "group": "iklan",
+      "calibrated": true
+    },
+    "iklan.jam_1h": {
+      "x": "66.6",
+      "y": "72.8",
+      "label": "Iklan · Jam: 1 Jam",
+      "group": "iklan",
+      "calibrated": true
+    },
+    "iklan.jam_2h": {
+      "x": "31.7",
+      "y": "78.2",
+      "label": "Iklan · Jam: 2 Jam",
+      "group": "iklan",
+      "calibrated": true
+    },
+    "iklan.jam_4h": {
+      "x": "49.3",
+      "y": "77.6",
+      "label": "Iklan · Jam: 4 Jam",
+      "group": "iklan",
+      "calibrated": true
+    },
+    "iklan.modal_dropdown": {
+      "x": "74.2",
+      "y": "84.3",
+      "label": "Iklan · Buka Opsi Modal",
+      "group": "iklan",
+      "calibrated": true
+    },
+    "iklan.modal_pilih_atur_harian": {
+      "x": "23.7",
+      "y": "88.0",
+      "label": "Iklan · Pilih 'Atur Modal Harian'",
+      "group": "iklan",
+      "calibrated": true
+    },
+    "iklan.modal_input": {
+      "x": "34.7",
+      "y": "51.2",
+      "label": "Iklan · Atur Modal Harian (Field)",
+      "group": "iklan",
+      "calibrated": true
+    },
+    "iklan.modal_selanjutnya": {
+      "x": "49.3",
+      "y": "96.8",
+      "label": "Iklan · Selanjutnya (Modal)",
+      "group": "iklan",
+      "calibrated": true
+    },
     "iklan.aktifkan": {
-      "x": "50",
-      "y": "92",
+      "x": "50.1",
+      "y": "92.8",
       "label": "Iklan · Aktifkan Iklan",
       "group": "iklan",
       "calibrated": true
@@ -250,6 +383,27 @@
       "x": "68.6",
       "y": "77.0",
       "label": "Bonus · claim 25",
+      "group": "bonus",
+      "calibrated": true
+    },
+    "bonus.input_dibagikan": {
+      "x": "72.9",
+      "y": "59.7",
+      "label": "Bonus · Input Dibagikan",
+      "group": "bonus",
+      "calibrated": true
+    },
+    "bonus.input_per_klaim": {
+      "x": "73.2",
+      "y": "72.4",
+      "label": "Bonus · Input Per Klaim",
+      "group": "bonus",
+      "calibrated": true
+    },
+    "bonus.input_jumlah_klaim": {
+      "x": "73.9",
+      "y": "84.7",
+      "label": "Bonus · Input Jumlah Klaim",
       "group": "bonus",
       "calibrated": true
     },

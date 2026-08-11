@@ -34,6 +34,12 @@ class DeviceManager:
     async def tap(self, devices: str, x: str | float, y: str | float, *, settle_ms: int = 80, dry_run: bool = False) -> dict[str, Any]:
         return await self.client.tap(devices, x, y, settle_ms=settle_ms, dry_run=dry_run)
 
+    async def swipe(self, devices: str, x1: str | float, y1: str | float, x2: str | float, y2: str | float, duration_ms: int = 500, *, dry_run: bool = False) -> dict[str, Any]:
+        if hasattr(self.client, "swipe"):
+            return await self.client.swipe(devices, x1, y1, x2, y2, duration_ms=duration_ms, dry_run=dry_run)
+        else:
+            return {"code": 10001, "message": "Swipe not implemented for this client", "data": None}
+
     async def start_apk(self, devices: str, apk: str, *, dry_run: bool = False) -> dict[str, Any]:
         return await self.client.start_apk(devices, apk, dry_run=dry_run)
 
@@ -42,5 +48,12 @@ class DeviceManager:
 
     async def input_text(self, devices: str, content: str, *, dry_run: bool = False) -> dict[str, Any]:
         return await self.client.input_text(devices, content, dry_run=dry_run)
+
+    async def screenshot_raw(self, device: str) -> bytes:
+        mode = cfg.load_settings().get("connection_mode", "adb")
+        if mode == "adb":
+            return await adb_client.screenshot_raw(device)
+        else:
+            raise NotImplementedError("Live screen capture over WebSocket (Panda) is not currently supported in this API. Please use ADB mode for live calibration.")
 
 device_manager = DeviceManager()

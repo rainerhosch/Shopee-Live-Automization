@@ -200,6 +200,18 @@ class BotScheduler:
             )
             return {"ok": resp.get("code") == 10000, "step": step, "response": resp}
 
+        if kind == "swipe":
+            resp = await device_manager.swipe(
+                self.device,
+                step["x1"],
+                step["y1"],
+                step["x2"],
+                step["y2"],
+                duration_ms=step.get("duration_ms", 500),
+                dry_run=dry,
+            )
+            return {"ok": resp.get("code") == 10000, "step": step, "response": resp}
+
         if kind == "start_apk":
             resp = await device_manager.start_apk(self.device, step["apk"], dry_run=dry)
             return {"ok": resp.get("code") == 10000, "step": step, "response": resp}

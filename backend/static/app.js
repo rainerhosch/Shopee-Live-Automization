@@ -57,6 +57,17 @@
       .replaceAll(">", "&gt;");
   }
 
+  function updateConnModeUI() {
+    const mode = $("select-conn-mode").value;
+    if (mode === "adb") {
+      $("field-adb-path").style.display = "block";
+      $("field-panda-url").style.display = "none";
+    } else {
+      $("field-adb-path").style.display = "none";
+      $("field-panda-url").style.display = "block";
+    }
+  }
+
   async function refreshSettings() {
     state.settings = await api("/api/settings");
     $("input-device").value = state.settings.default_device || $("input-device").value || "";
@@ -65,6 +76,7 @@
     $("input-panda-url").value = state.settings.panda_url || "ws://127.0.0.1:22222/";
     $("select-dry").value = String(!!state.settings.dry_run);
     $("input-delay").value = state.settings.step_delay_ms || 600;
+    updateConnModeUI();
     updateBadges();
   }
 
@@ -187,8 +199,11 @@
         type,
         interval_sec: num($("lelang-interval").value, 300),
         params: {
-          batas_waktu: $("lelang-batas").value,
           judul: $("lelang-judul").value || null,
+          harga: $("lelang-harga").value || null,
+          mode: $("lelang-mode").value,
+          peserta: $("lelang-peserta").value,
+          batas_waktu: $("lelang-batas").value,
         },
       };
     }
@@ -198,7 +213,9 @@
         interval_sec: num($("iklan-interval").value, 600),
         params: {
           tujuan: $("iklan-tujuan").value,
-          durasi: $("iklan-durasi").value,
+          durasi_hari: $("iklan-durasi-hari").value,
+          durasi_jam: $("iklan-durasi-jam").value,
+          modal: num($("iklan-modal").value, 10000),
         },
       };
     }
@@ -209,6 +226,7 @@
         params: {
           untuk_dibagikan: num($("bonus-bagi").value, 100000),
           koin_per_klaim: num($("bonus-claim").value, 100),
+          jumlah_klaim: num($("bonus-jumlah").value, 1000),
         },
       };
     }
@@ -416,6 +434,7 @@
 
     $("select-dry").onchange = updateBadges;
     $("select-profile").onchange = () => loadCalibration();
+    $("select-conn-mode").onchange = updateConnModeUI;
 
     $("btn-start").onclick = async () => {
       try {
@@ -496,6 +515,14 @@
     $("btn-cal-save").onclick = () => saveCalPoint(false);
     $("btn-cal-save-tap").onclick = () => saveCalPoint(true);
     $("btn-cal-test-only").onclick = () => testTapOnly();
+    $("btn-cal-capture").onclick = () => {
+      const dev = $("input-device").value.trim() || state.settings.default_device;
+      if (!dev) return alert("No default device selected.");
+      const img = $("ref-image");
+      img.src = `/api/screen?device=${encodeURIComponent(dev)}&t=${Date.now()}`;
+      img.style.display = "block";
+      $("cal-hint").textContent = "Menampilkan Live Capture ADB. Silakan klik pada gambar untuk mendapatkan kordinat.";
+    };
   }
 
   function connectLogs() {

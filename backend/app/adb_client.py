@@ -23,6 +23,10 @@ class AdbClient:
         return path
 
     async def _run_adb(self, *args: str) -> tuple[int, str, str]:
+        code, stdout, stderr = await self._run_adb_bytes(*args)
+        return code, stdout.decode(errors='replace').strip(), stderr.decode(errors='replace').strip()
+
+    async def _run_adb_bytes(self, *args: str) -> tuple[int, bytes, bytes]:
         cmd = [self.get_adb_path(), *args]
         proc = await asyncio.create_subprocess_exec(
             *cmd,
@@ -30,7 +34,7 @@ class AdbClient:
             stderr=asyncio.subprocess.PIPE
         )
         stdout, stderr = await proc.communicate()
-        return proc.returncode or 0, stdout.decode(errors='replace').strip(), stderr.decode(errors='replace').strip()
+        return proc.returncode or 0, stdout, stderr
 
     async def connect(self) -> None:
         code, out, err = await self._run_adb("start-server")
@@ -57,8 +61,8 @@ class AdbClient:
         devices = []
         for line in out.splitlines()[1:]:
             parts = line.split()
-            if len(parts) == 2 and parts[1] == "device":
-                devices.append(parts[0])
+            if len(parts) >= 2 and parts[1] == "device":
+                devices.append({"serial": parts[0], "status": "device"})
         return {"code": 10000, "message": "OK", "data": devices}
 
     async def _get_screen_size(self, device: str) -> tuple[int, int]:
@@ -112,6 +116,50 @@ class AdbClient:
         if code != 0:
             return {"code": 10001, "message": err, "data": None}
         return {"code": 10000, "message": "OK", "data": None}
+
+    async def swipe(
+        self,
+        devices: str,
+        x1: str | float,
+        y1: str | float,
+        x2: str | float,
+        y2: str | float,
+        duration_ms: int = 500,
+        *,
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        if dry_run:
+            await log_bus.info(f"[dry-run] ADB swipe device={devices} {x1},{y1} -> {x2},{y2} duration={duration_ms}")
+            return {"code": 10000, "message": "DRY_RUN", "data": None}
+        
+        fx1, fy1, fx2, fy2 = float(x1), float(y1), float(x2), float(y2)
+        if (0 < fx1 <= 100 and 0 < fy1 <= 100) or (0 < fx2 <= 100 and 0 < fy2 <= 100):
+            width, height = await self._get_screen_size(devices)
+            if 0 < fx1 <= 100: fx1 = (fx1 / 100.0) * width
+            if 0 < fy1 <= 100: fy1 = (fy1 / 100.0) * height
+            if 0 < fx2 <= 100: fx2 = (fx2 / 100.0) * width
+            if 0 < fy2 <= 100: fy2 = (fy2 / 100.0) * height
+
+        code, out, err = await self._run_adb("-s", devices, "shell", "input", "swipe", str(int(fx1)), str(int(fy1)), str(int(fx2)), str(int(fy2)), str(duration_ms))
+        if code != 0:
+            return {"code": 10001, "message": err, "data": None}
+        return {"code": 10000, "message": "OK", "data": None}
+
+    async def screenshot(self, device: str, save_path: str | None = None) -> dict[str, Any]:
+        data: dict[str, Any] = {}
+        # Scrcpy replacement logic isn't here, this is generic. We use screenshot_raw for live preview.
+        # But for API compatibility:
+        code, out, err = await self._run_adb("-s", device, "exec-out", "screencap", "-p")
+        if code != 0:
+            return {"code": 10001, "message": err, "data": None}
+        return {"code": 10000, "message": "OK", "data": data}
+
+    async def screenshot_raw(self, device: str) -> bytes:
+        await self.ensure()
+        code, stdout, stderr = await self._run_adb_bytes("-s", device, "exec-out", "screencap", "-p")
+        if code != 0:
+            raise RuntimeError(f"screencap failed: {stderr.decode(errors='replace')}")
+        return stdout
 
     async def push_event(self, devices: str, type_code: str | int, *, dry_run: bool = False) -> dict[str, Any]:
         if dry_run:

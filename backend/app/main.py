@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from . import config as cfg
@@ -145,6 +145,17 @@ async def bot_control(body: BotControl) -> dict[str, Any]:
 @app.get("/api/tasks")
 async def list_tasks() -> list[dict[str, Any]]:
     return list(bot.tasks.values())
+
+
+@app.get("/api/screen")
+async def get_screen(device: str):
+    try:
+        image_bytes = await device_manager.screenshot_raw(device)
+        return Response(content=image_bytes, media_type="image/png")
+    except NotImplementedError as exc:
+        raise HTTPException(400, str(exc))
+    except Exception as exc:
+        raise HTTPException(500, f"Screenshot failed: {exc}")
 
 
 @app.post("/api/tasks")

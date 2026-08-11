@@ -41,11 +41,11 @@
             <option value="panda">Panda WebSocket</option>
           </select>
         </div>
-        <div class="field">
+        <div class="field" id="field-adb-path">
           <label>ADB Path (optional)</label>
           <input id="input-adb-path" placeholder="adb (default)" />
         </div>
-        <div class="field">
+        <div class="field" id="field-panda-url">
           <label>Panda URL (optional)</label>
           <input id="input-panda-url" placeholder="ws://127.0.0.1:22222/" />
         </div>
@@ -101,6 +101,30 @@
         </div>
 
         <div id="form-lelang" class="task-form">
+          <div class="field">
+            <label>Judul Lelang</label>
+            <input id="lelang-judul" placeholder="Lelang1" />
+          </div>
+          <div class="field">
+            <label>Harga (Opsional)</label>
+            <input id="lelang-harga" placeholder="Contoh: 50000" />
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Mode Lelang</label>
+              <select id="lelang-mode">
+                <option>Acak</option>
+                <option>Tercepat</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Peserta</label>
+              <select id="lelang-peserta">
+                <option>Semua Penonton</option>
+                <option>Hanya Pengikut</option>
+              </select>
+            </div>
+          </div>
           <div class="field-row">
             <div class="field">
               <label>Batas Waktu</label>
@@ -113,12 +137,8 @@
             </div>
             <div class="field">
               <label>Interval (detik)</label>
-              <input id="lelang-interval" type="number" value="300" min="10" />
+              <input type="number" id="lelang-interval" value="300" min="10" />
             </div>
-          </div>
-          <div class="field">
-            <label>Judul (opsional)</label>
-            <input id="lelang-judul" placeholder="Lelang1" />
           </div>
         </div>
 
@@ -127,25 +147,41 @@
             <div class="field">
               <label>Tujuan</label>
               <select id="iklan-tujuan">
-                <option>GMV Max Auto</option>
-                <option>GMV Max ROAS</option>
+                <option>Tingkatkan Penonton</option>
+                <option>GMV (Max Auto)</option>
+                <option>GMV (Max ROAS)</option>
               </select>
             </div>
             <div class="field">
-              <label>Durasi</label>
-              <select id="iklan-durasi">
+              <label>Durasi Hari</label>
+              <select id="iklan-durasi-hari">
                 <option>Tak Terbatas</option>
                 <option>1 hari</option>
                 <option>3 hari</option>
                 <option>7 hari</option>
                 <option>14 hari</option>
-                <option>Atur sendiri</option>
               </select>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Durasi Jam</label>
+              <select id="iklan-durasi-jam">
+                <option>Sepanjang Hari</option>
+                <option>30 Menit</option>
+                <option>1 Jam</option>
+                <option>2 Jam</option>
+                <option>4 Jam</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Modal Harian (Rp)</label>
+              <input type="number" id="iklan-modal" value="10000" />
             </div>
           </div>
           <div class="field">
             <label>Interval (detik)</label>
-            <input id="iklan-interval" type="number" value="600" min="10" />
+            <input type="number" id="iklan-interval" value="3600" min="60" />
           </div>
         </div>
 
@@ -153,26 +189,22 @@
           <div class="field-row">
             <div class="field">
               <label>Untuk dibagikan</label>
-              <select id="bonus-bagi">
-                <option value="250000">250.000</option>
-                <option value="100000" selected>100.000</option>
-                <option value="50000">50.000</option>
-                <option value="25000">25.000</option>
-              </select>
+              <input type="number" id="bonus-bagi" value="100000" />
             </div>
             <div class="field">
               <label>Koin per klaim</label>
-              <select id="bonus-claim">
-                <option value="200">200</option>
-                <option value="100" selected>100</option>
-                <option value="50">50</option>
-                <option value="25">25</option>
-              </select>
+              <input type="number" id="bonus-claim" value="100" />
             </div>
           </div>
-          <div class="field">
-            <label>Interval (detik)</label>
-            <input id="bonus-interval" type="number" value="1200" min="10" />
+          <div class="field-row">
+            <div class="field">
+              <label>Jumlah Klaim</label>
+              <input type="number" id="bonus-jumlah" value="1000" />
+            </div>
+            <div class="field">
+              <label>Interval (detik)</label>
+              <input type="number" id="bonus-interval" value="600" min="60" />
+            </div>
           </div>
         </div>
 
@@ -218,7 +250,10 @@
       <section class="panel" id="calibration-panel">
         <div class="section-title">
           <h2 style="margin:0">Coordinate Calibration · Admin Live</h2>
-          <span class="muted" id="cal-progress-label">0 / 0</span>
+          <div>
+            <button class="btn btn-sm" id="btn-cal-capture">📷 Live Capture</button>
+            <span class="muted" id="cal-progress-label">0 / 0</span>
+          </div>
         </div>
         <div class="progress-bar"><span id="cal-progress-bar"></span></div>
         <p class="muted" style="margin-top:0">
@@ -243,7 +278,7 @@
               <img id="ref-image" alt="Reference UI" draggable="false" />
               <div class="crosshair" id="ref-crosshair"></div>
             </div>
-            <p class="ref-hint">Klik pada gambar = set X/Y persen relatif ke area gambar.</p>
+            <p class="ref-hint" id="cal-hint">Klik pada gambar = set X/Y persen relatif ke area gambar.</p>
           </div>
 
           <div>
