@@ -59,18 +59,16 @@
           <label>Coordinate profile</label>
           <select id="select-profile"></select>
         </div>
-        <div class="field-row">
-          <div class="field">
-            <label>Dry-run (no real taps)</label>
-            <select id="select-dry">
-              <option value="true">ON (safe)</option>
-              <option value="false">OFF (live taps)</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Step delay (ms)</label>
-            <input id="input-delay" type="number" min="100" step="50" value="600" />
-          </div>
+        <div class="field">
+          <label>Dry-run (no real taps)</label>
+          <select id="select-dry">
+            <option value="true">ON (safe)</option>
+            <option value="false">OFF (live taps)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Step delay (ms)</label>
+          <input id="input-delay" type="number" min="100" step="50" value="600" />
         </div>
         <div class="btn-row">
           <button class="btn btn-sm" id="btn-save-settings">Save settings</button>
