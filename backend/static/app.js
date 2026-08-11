@@ -132,9 +132,8 @@
   async function refreshBot() {
     state.bot = await api("/api/bot");
     updateBadges();
-    $("bot-summary").textContent = `Status: ${state.bot.status} · device: ${
-      state.bot.device || "-"
-    } · profile: ${state.bot.profile} · dry_run: ${state.bot.dry_run}`;
+    $("bot-summary").textContent = `Status: ${state.bot.status} · device: ${state.bot.device || "-"
+      } · profile: ${state.bot.profile} · dry_run: ${state.bot.dry_run}`;
     renderTasks(state.bot.tasks || []);
   }
 
@@ -146,7 +145,7 @@
       `Bot ${st}`
     );
     const dry = $("select-dry").value === "true";
-    setBadge($("badge-dry"), dry ? "warn" : "err", dry ? "Dry-run ON" : "LIVE taps");
+    setBadge($("badge-dry"), dry ? "warn" : "ok", dry ? "Dry-run ON" : "LIVE taps");
   }
 
   function renderTasks(tasks) {
@@ -576,8 +575,8 @@
     await refreshBot();
     await loadCalibration();
     setInterval(() => {
-      refreshBot().catch(() => {});
-      refreshDevices().catch(() => {});
+      refreshBot().catch(() => { });
+      refreshDevices().catch(() => { });
     }, 5000);
   }
 
