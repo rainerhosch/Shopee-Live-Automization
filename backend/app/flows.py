@@ -178,19 +178,19 @@ def build_bonus_koin(profile: dict[str, Any], params: dict[str, Any], settings: 
     return [
         _tap_step("home.lainnya", profile, delay + 200, "Open Lainnya"),
         _tap_step("lainnya.bonus_koin", profile, delay + 200, "Open Bonus Koin"),
-        _tap_step("bonus.input_bagi", profile, delay, "Focus Bagi"),
+        _tap_step("bonus.input_dibagikan", profile, delay, "Focus Bagi"),
         {"kind": "input_text", "content": untuk, "delay_ms": delay, "note": f"Input Bagi {untuk}"},
         {"kind": "push", "type": 4, "delay_ms": delay, "note": "Dismiss Keyboard (BACK)"},
 
-        _tap_step("bonus.klaim", profile, delay, "Focus Klaim"),
+        _tap_step("bonus.input_per_klaim", profile, delay, "Focus Klaim"),
         {"kind": "input_text", "content": klaim, "delay_ms": delay, "note": f"Input Klaim {klaim}"},
         {"kind": "push", "type": 4, "delay_ms": delay, "note": "Dismiss Keyboard (BACK)"},
 
-        _tap_step("bonus.jumlah_klaim", profile, delay, "Focus Jumlah"),
+        _tap_step("bonus.input_jumlah_klaim", profile, delay, "Focus Jumlah"),
         {"kind": "input_text", "content": jumlah, "delay_ms": delay, "note": f"Input Jumlah {jumlah}"},
         {"kind": "push", "type": 4, "delay_ms": delay, "note": "Dismiss Keyboard (BACK)"},
         
-        _tap_step("bonus.simpan", profile, delay + 500, "Simpan Bonus Koin"),
+        _tap_step("bonus.mulai", profile, delay + 500, "Simpan Bonus Koin"),
     ]
 
 
