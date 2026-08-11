@@ -1,6 +1,7 @@
 import asyncio
 import os
 import re
+import subprocess
 from typing import Any
 from .logger import log_bus
 from . import config as cfg
@@ -28,10 +29,16 @@ class AdbClient:
 
     async def _run_adb_bytes(self, *args: str) -> tuple[int, bytes, bytes]:
         cmd = [self.get_adb_path(), *args]
+        
+        kwargs = {}
+        if os.name == 'nt':
+            kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
+            
         proc = await asyncio.create_subprocess_exec(
             *cmd,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+            stderr=asyncio.subprocess.PIPE,
+            **kwargs
         )
         stdout, stderr = await proc.communicate()
         return proc.returncode or 0, stdout, stderr
