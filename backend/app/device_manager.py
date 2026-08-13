@@ -34,6 +34,11 @@ class DeviceManager:
     async def tap(self, devices: str, x: str | float, y: str | float, *, settle_ms: int = 80, dry_run: bool = False) -> dict[str, Any]:
         return await self.client.tap(devices, x, y, settle_ms=settle_ms, dry_run=dry_run)
 
+    async def tap_text(self, devices: str, text: str, timeout: int = 3) -> bool:
+        if hasattr(self.client, "tap_text"):
+            return await self.client.tap_text(devices, text, timeout=timeout)
+        return False
+
     async def swipe(self, devices: str, x1: str | float, y1: str | float, x2: str | float, y2: str | float, duration_ms: int = 500, *, dry_run: bool = False) -> dict[str, Any]:
         if hasattr(self.client, "swipe"):
             return await self.client.swipe(devices, x1, y1, x2, y2, duration_ms=duration_ms, dry_run=dry_run)

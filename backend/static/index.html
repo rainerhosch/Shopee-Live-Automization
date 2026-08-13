@@ -358,6 +358,21 @@
     <div class="stack">
       <section class="panel">
         <div class="section-title">
+          <h2 style="margin:0">Live Screen (Mirror)</h2>
+          <div>
+            <button class="btn btn-sm" id="btn-scrcpy">Launch Native Scrcpy</button>
+            <button class="btn btn-sm" id="btn-stream-start">Start Stream</button>
+            <button class="btn btn-sm" id="btn-stream-stop">Stop Stream</button>
+          </div>
+        </div>
+        <div style="margin-top: 1rem; text-align: center; background: #000; min-height: 250px; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+          <img id="live-stream-img" src="" alt="Live Stream" style="max-width: 100%; max-height: 500px; display: none;" />
+          <div id="live-stream-placeholder" class="muted">Stream stopped (Max 10 FPS)</div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-title">
           <h2 style="margin:0">Live Logs</h2>
           <button class="btn btn-sm" id="btn-clear-logs">Clear view</button>
         </div>
@@ -366,7 +381,7 @@
     </div>
   </main>
 
-  <script src="/static/app.js"></script>
+  <script src="/static/app.js?v=2"></script>
 </body>
 
 </html>

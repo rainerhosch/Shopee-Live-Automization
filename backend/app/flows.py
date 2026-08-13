@@ -5,13 +5,14 @@ from typing import Any
 from .config import get_point
 
 
-def _tap_step(key: str, profile: dict[str, Any], delay_ms: int, note: str = "") -> dict[str, Any]:
+def _tap_step(key: str, profile: dict[str, Any], delay_ms: int, note: str = "", text_target: str = None) -> dict[str, Any]:
     pt = get_point(profile, key)
     return {
         "kind": "tap",
         "key": key,
         "x": pt["x"],
         "y": pt["y"],
+        "text_target": text_target,
         "delay_ms": delay_ms,
         "note": note or key,
     }
@@ -54,10 +55,10 @@ def build_lelang(profile: dict[str, Any], params: dict[str, Any], settings: dict
         raise ValueError(f"Invalid batas_waktu: {batas}")
 
     steps = [
-        _tap_step("home.lelang", profile, delay + 200, "Open Lelang"),
+        _tap_step("home.lelang", profile, delay + 200, "Open Lelang", text_target="Lelang"),
     ]
     if params.get("judul"):
-        steps.append(_tap_step("lelang.judul", profile, delay, "Focus Judul"))
+        steps.append(_tap_step("lelang.judul", profile, delay, "Focus Judul", text_target="Judul"))
         steps.append({
             "kind": "input_text",
             "content": str(params["judul"]),
@@ -67,7 +68,7 @@ def build_lelang(profile: dict[str, Any], params: dict[str, Any], settings: dict
         steps.append({"kind": "push", "type": 4, "delay_ms": delay, "note": "Dismiss Keyboard (BACK)"})
 
     if params.get("harga"):
-        steps.append(_tap_step("lelang.harga", profile, delay, "Focus Harga"))
+        steps.append(_tap_step("lelang.harga", profile, delay, "Focus Harga", text_target="Harga"))
         steps.append({
             "kind": "input_text",
             "content": str(params["harga"]),
@@ -86,8 +87,8 @@ def build_lelang(profile: dict[str, Any], params: dict[str, Any], settings: dict
     steps.append(_tap_step("lelang.peserta", profile, delay, "Open Peserta"))
     steps.append(_tap_step(peserta_key, profile, delay, f"Select Peserta {peserta}"))
 
-    steps.append(_tap_step(time_map[batas], profile, delay, f"Batas {batas}"))
-    steps.append(_tap_step("lelang.mulai", profile, delay + 300, "Mulai Lelang"))
+    steps.append(_tap_step(time_map[batas], profile, delay, f"Batas {batas}", text_target=batas))
+    steps.append(_tap_step("lelang.mulai", profile, delay + 300, "Mulai", text_target="Mulai"))
     return steps
 
 

@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, UploadFile, File
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import FileResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import config as cfg
@@ -145,6 +145,42 @@ async def bot_control(body: BotControl) -> dict[str, Any]:
 @app.get("/api/tasks")
 async def list_tasks() -> list[dict[str, Any]]:
     return list(bot.tasks.values())
+
+
+async def screen_streamer(device: str = None):
+    """Generator for MJPEG stream from device screenshot."""
+    while True:
+        try:
+            frame = await device_manager.screenshot_raw(device)
+            if frame:
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/png\r\n\r\n' + frame + b'\r\n')
+            else:
+                await asyncio.sleep(0.5)
+        except Exception as exc:
+            import traceback
+            err = traceback.format_exc()
+            await log_bus.error(f"Stream exception: {exc}\n{err}")
+            await asyncio.sleep(1)
+        await asyncio.sleep(0.2)
+
+@app.get("/api/stream")
+async def mjpeg_stream(device: str = None):
+    return StreamingResponse(screen_streamer(device), media_type="multipart/x-mixed-replace; boundary=frame")
+
+@app.post("/api/scrcpy")
+async def launch_scrcpy(device: str = None):
+    """Launch native scrcpy window for the device."""
+    import subprocess
+    cmd = ["C:\\scrcpy\\scrcpy.exe"]
+    if device:
+        cmd.extend(["-s", device])
+    
+    try:
+        subprocess.Popen(cmd, creationflags=subprocess.CREATE_NEW_CONSOLE | subprocess.CREATE_NO_WINDOW)
+        return {"ok": True, "message": "Scrcpy launched"}
+    except Exception as exc:
+        raise HTTPException(500, f"Failed to launch scrcpy: {exc}")
 
 
 @app.delete("/api/queue")

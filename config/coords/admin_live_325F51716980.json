@@ -6,7 +6,7 @@
   "source_height": null,
   "calibrated": true,
   "notes": "Placeholder percentages only. Calibrate on the real Admin Live phone before execute mode.",
-  "updated_at": "2026-08-11T08:43:38.723247+00:00",
+  "updated_at": "2026-08-13T10:38:13.223093+00:00",
   "points": {
     "home.produk": {
       "x": "25.7",
@@ -16,8 +16,8 @@
       "calibrated": true
     },
     "home.komentar": {
-      "x": "32.7",
-      "y": "88.9",
+      "x": "35.0",
+      "y": "88.3",
       "label": "Home · Komentar",
       "group": "home",
       "calibrated": true
@@ -44,8 +44,8 @@
       "calibrated": true
     },
     "home.lainnya": {
-      "x": "83.7",
-      "y": "86.4",
+      "x": "74.7",
+      "y": "88.5",
       "label": "Home · Lainnya",
       "group": "home",
       "calibrated": true
@@ -310,8 +310,8 @@
       "calibrated": true
     },
     "lainnya.bonus_koin": {
-      "x": "21.7",
-      "y": "66.4",
+      "x": "28.2",
+      "y": "66.2",
       "label": "Lainnya · Bonus Koin",
       "group": "lainnya",
       "calibrated": true

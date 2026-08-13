@@ -55,6 +55,36 @@ class AdbClient:
         # Do not kill adb server as other apps might use it
         self._screen_sizes.clear()
 
+    async def screencap(self) -> bytes:
+        from .vision import get_screen_bytes
+        bytes_data = await get_screen_bytes(self)
+        if not bytes_data:
+            raise RuntimeError("Failed to get screencap")
+        return bytes_data
+
+    async def tap_text(self, devices: str, text: str, timeout: int = 5) -> bool:
+        """
+        Mencari teks di layar (menggunakan UI Automator) dan melakukan tap jika ditemukan.
+        """
+        from .vision import dump_ui, find_node_by_text
+        from .logger import log_bus
+        import time
+        
+        await log_bus.info(f"🔍 Mencari tombol '{text}' di layar...")
+        start = time.time()
+        while time.time() - start < timeout:
+            root = await dump_ui(self, devices)
+            node = find_node_by_text(root, text)
+            if node:
+                cx, cy = node['center']
+                await log_bus.info(f"🎯 Ditemukan '{text}' di ({cx}, {cy})")
+                await self.tap(devices, cx, cy)
+                return True
+            await asyncio.sleep(1)
+            
+        await log_bus.error(f"❌ Teks '{text}' tidak ditemukan setelah {timeout} detik.")
+        return False
+
     async def ensure(self) -> None:
         if not self.connected:
             await self.connect()
@@ -161,9 +191,12 @@ class AdbClient:
             return {"code": 10001, "message": err, "data": None}
         return {"code": 10000, "message": "OK", "data": data}
 
-    async def screenshot_raw(self, device: str) -> bytes:
+    async def screenshot_raw(self, device: str = None) -> bytes:
         await self.ensure()
-        code, stdout, stderr = await self._run_adb_bytes("-s", device, "exec-out", "screencap", "-p")
+        args = ["exec-out", "screencap", "-p"]
+        if device:
+            args = ["-s", device] + args
+        code, stdout, stderr = await self._run_adb_bytes(*args)
         if code != 0:
             raise RuntimeError(f"screencap failed: {stderr.decode(errors='replace')}")
         return stdout

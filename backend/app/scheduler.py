@@ -262,13 +262,25 @@ class BotScheduler:
             return {"ok": True, "step": step}
 
         if kind == "tap":
-            resp = await device_manager.tap(
-                self.device,
-                step["x"],
-                step["y"],
-                settle_ms=settle,
-                dry_run=dry,
-            )
+            text_target = step.get("text_target")
+            resp = None
+            
+            # 1. Try finding by text (UI Automator) first
+            if text_target and not dry:
+                if hasattr(device_manager, "tap_text"):
+                    success = await device_manager.tap_text(self.device, text_target)
+                    if success:
+                        resp = {"code": 10000, "message": f"Text matched: {text_target}"}
+            
+            # 2. Fallback to coordinate tap
+            if not resp:
+                resp = await device_manager.tap(
+                    self.device,
+                    step["x"],
+                    step["y"],
+                    settle_ms=settle,
+                    dry_run=dry,
+                )
             return {"ok": resp.get("code") == 10000, "step": step, "response": resp}
 
         if kind == "swipe":
