@@ -398,14 +398,29 @@ async def calibration_checklist(profile: str = "admin_live", device: str = None)
         "lelang.mulai",
         "lelang.judul",
         "lelang.close",
+        "iklan.tujuan_dropdown",
+        "iklan.tujuan_penonton",
+        "iklan.tujuan_gmv_max_popup",
+        "iklan.tujuan_konfirmasi",
         "iklan.tujuan_gmv_auto",
         "iklan.tujuan_gmv_roas",
+        "iklan.roas_custom",
         "iklan.durasi_tak_terbatas",
         "iklan.durasi_1",
         "iklan.durasi_3",
         "iklan.durasi_7",
         "iklan.durasi_14",
-        "iklan.durasi_manual",
+        "iklan.durasi_custom",
+        "iklan.jam_all",
+        "iklan.jam_30m",
+        "iklan.jam_1h",
+        "iklan.jam_2h",
+        "iklan.jam_4h",
+        "iklan.jam_custom",
+        "iklan.modal",
+        "iklan.modal_unlimited",
+        "iklan.modal_daily",
+        "iklan.modal_selanjutnya",
         "iklan.aktifkan",
         "iklan.close",
         "lainnya.bonus_koin",
@@ -430,16 +445,14 @@ async def calibration_checklist(profile: str = "admin_live", device: str = None)
     points = data.get("points") or {}
     items = []
     for key in order:
-        if key not in points:
-            continue
-        pt = points[key]
+        pt = points.get(key) or {}
         items.append(
             {
                 "key": key,
                 "label": pt.get("label") or key,
                 "group": pt.get("group") or key.split(".")[0],
-                "x": str(pt.get("x")),
-                "y": str(pt.get("y")),
+                "x": str(pt.get("x", 0)),
+                "y": str(pt.get("y", 0)),
                 "calibrated": bool(pt.get("calibrated")),
             }
         )

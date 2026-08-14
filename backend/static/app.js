@@ -308,11 +308,12 @@
         interval_sec: num($("iklan-interval").value, 600),
         params: {
           tujuan: $("iklan-tujuan").value,
+          roas: $("iklan-roas").value,
+          roas_custom: $("iklan-roas-custom").value,
           durasi_hari: $("iklan-durasi-hari").value,
           durasi_jam: $("iklan-durasi-jam").value,
-          modal: num($("iklan-modal").value, 10000),
-          kelipatan_modal: num($("iklan-kelipatan-modal").value, null),
-          max_modal: num($("iklan-max-modal").value, null),
+          tipe_modal: $("iklan-tipe-modal").value,
+          modal_harian: num($("iklan-modal-harian").value, 10000),
         },
       };
     }

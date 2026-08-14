@@ -14,7 +14,7 @@
 +-----------------------------------------------------------------------+
 |  Iklan Live        | 1. Klik Tombol "Iklan Live" di Home Live         |
 |                    | 2. Pilih Tujuan (Muncul pilihan,                 |
-|                    |    pilih "GVM" dan "Tingkatkan Penonton")        |
+|                    |    pilih "GVM Max" dan "Tingkatkan Penonton")    |
 |                    |    lalu klik "Konfirmasi"                        |
 |                    | 3. Pilih Durasi Hari(misal: "Tak Terbatas",      |
 |                    |    "1 hari", "3 hari", "7 hari", "14 hari")      |

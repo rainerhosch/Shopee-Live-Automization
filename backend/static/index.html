@@ -147,12 +147,29 @@
           <div class="field-row">
             <div class="field">
               <label>Tujuan</label>
-              <select id="iklan-tujuan">
+              <select id="iklan-tujuan" onchange="updateIklanFields()">
                 <option>Tingkatkan Penonton</option>
                 <option>GMV (Max Auto)</option>
                 <option>GMV (Max ROAS)</option>
               </select>
             </div>
+          </div>
+          <div class="field-row" id="iklan-roas-row" style="display: none;">
+            <div class="field">
+              <label>Target ROAS</label>
+              <select id="iklan-roas" onchange="updateIklanFields()">
+                <option>ROAS = 5.4</option>
+                <option>ROAS = 8.0</option>
+                <option>ROAS = 9.7</option>
+                <option>Masukan Target</option>
+              </select>
+            </div>
+            <div class="field" id="iklan-roas-custom-field" style="display: none;">
+              <label>Nilai Target ROAS</label>
+              <input id="iklan-roas-custom" type="number" step="0.1" min="1.0" max="50.0" value="5.0" />
+            </div>
+          </div>
+          <div class="field-row">
             <div class="field">
               <label>Durasi Hari</label>
               <select id="iklan-durasi-hari">
@@ -161,11 +178,10 @@
                 <option>3 hari</option>
                 <option>7 hari</option>
                 <option>14 hari</option>
+                <option>Atur Sendiri</option>
               </select>
             </div>
-          </div>
-          <div class="field-row">
-            <div class="field">
+            <div class="field" id="iklan-durasi-jam-field">
               <label>Durasi Jam</label>
               <select id="iklan-durasi-jam">
                 <option>Sepanjang Hari</option>
@@ -173,22 +189,60 @@
                 <option>1 Jam</option>
                 <option>2 Jam</option>
                 <option>4 Jam</option>
+                <option>Atur Sendiri</option>
               </select>
             </div>
           </div>
-          <div class="field-row" style="grid-template-columns: 1fr 1fr 1fr;">
+          <div class="field-row">
             <div class="field">
+              <label>Tipe Modal</label>
+              <select id="iklan-tipe-modal" onchange="updateIklanFields()">
+                <option>Modal Tidak Terbatas</option>
+                <option>Atur Modal Harian</option>
+              </select>
+            </div>
+            <div class="field" id="iklan-modal-harian-field" style="display: none;">
               <label>Modal Harian (Rp)</label>
-              <input type="number" id="iklan-modal" value="25000" />
+              <input id="iklan-modal-harian" type="number" value="10000" />
             </div>
-            <div class="field">
-              <label>Kelipatan</label>
-              <input type="number" id="iklan-kelipatan-modal" placeholder="5000" />
-            </div>
-            <div class="field">
-              <label>Max Modal</label>
-              <input type="number" id="iklan-max-modal" placeholder="50000" />
-            </div>
+          </div>
+          <script>
+            function updateIklanFields() {
+              const tujuan = document.getElementById("iklan-tujuan").value;
+              const roasRow = document.getElementById("iklan-roas-row");
+              const jamField = document.getElementById("iklan-durasi-jam-field");
+              
+              if (tujuan === "GMV (Max ROAS)") {
+                roasRow.style.display = "grid";
+              } else {
+                roasRow.style.display = "none";
+              }
+              
+              if (tujuan === "Tingkatkan Penonton") {
+                jamField.style.display = "block";
+              } else {
+                jamField.style.display = "none";
+              }
+              
+              const roas = document.getElementById("iklan-roas").value;
+              const roasCustom = document.getElementById("iklan-roas-custom-field");
+              if (tujuan === "GMV (Max ROAS)" && roas === "Masukan Target") {
+                roasCustom.style.display = "block";
+              } else {
+                roasCustom.style.display = "none";
+              }
+              
+              const modalTipe = document.getElementById("iklan-tipe-modal").value;
+              const modalHarian = document.getElementById("iklan-modal-harian-field");
+              if (modalTipe === "Atur Modal Harian") {
+                modalHarian.style.display = "block";
+              } else {
+                modalHarian.style.display = "none";
+              }
+            }
+          </script>
+          <div class="field-row" style="grid-template-columns: 1fr 1fr; margin-top: .5rem;">
+            <!-- Removed stray button -->
           </div>
           <div class="field">
             <label>Interval (detik)</label>
@@ -381,7 +435,7 @@
     </div>
   </main>
 
-  <script src="/static/app.js?v=2"></script>
+  <script src="/static/app.js?v=3"></script>
 </body>
 
 </html>

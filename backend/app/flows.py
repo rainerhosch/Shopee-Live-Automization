@@ -6,12 +6,17 @@ from .config import get_point
 
 
 def _tap_step(key: str, profile: dict[str, Any], delay_ms: int, note: str = "", text_target: str = None) -> dict[str, Any]:
-    pt = get_point(profile, key)
+    try:
+        pt = get_point(profile, key)
+        x, y = pt["x"], pt["y"]
+    except KeyError:
+        x, y = "0", "0"
+    
     return {
         "kind": "tap",
         "key": key,
-        "x": pt["x"],
-        "y": pt["y"],
+        "x": x,
+        "y": y,
         "text_target": text_target,
         "delay_ms": delay_ms,
         "note": note or key,
@@ -55,10 +60,10 @@ def build_lelang(profile: dict[str, Any], params: dict[str, Any], settings: dict
         raise ValueError(f"Invalid batas_waktu: {batas}")
 
     steps = [
-        _tap_step("home.lelang", profile, delay + 200, "Open Lelang", text_target="Lelang"),
+        _tap_step("home.lelang", profile, delay + 200, "Open Lelang"),
     ]
     if params.get("judul"):
-        steps.append(_tap_step("lelang.judul", profile, delay, "Focus Judul", text_target="Judul"))
+        steps.append(_tap_step("lelang.judul", profile, delay, "Focus Judul"))
         steps.append({
             "kind": "input_text",
             "content": str(params["judul"]),
@@ -68,7 +73,7 @@ def build_lelang(profile: dict[str, Any], params: dict[str, Any], settings: dict
         steps.append({"kind": "push", "type": 4, "delay_ms": delay, "note": "Dismiss Keyboard (BACK)"})
 
     if params.get("harga"):
-        steps.append(_tap_step("lelang.harga", profile, delay, "Focus Harga", text_target="Harga"))
+        steps.append(_tap_step("lelang.harga", profile, delay, "Focus Harga"))
         steps.append({
             "kind": "input_text",
             "content": str(params["harga"]),
@@ -95,16 +100,17 @@ def build_lelang(profile: dict[str, Any], params: dict[str, Any], settings: dict
 def build_iklan_live(profile: dict[str, Any], params: dict[str, Any], settings: dict[str, Any]) -> list[dict[str, Any]]:
     delay = int(settings.get("step_delay_ms", 600))
     tujuan = str(params.get("tujuan", "Tingkatkan Penonton"))
+    roas = str(params.get("roas", "ROAS = 5.4"))
+    roas_custom = str(params.get("roas_custom", "5.0"))
     durasi_hari = str(params.get("durasi_hari", "Tak Terbatas"))
     durasi_jam = str(params.get("durasi_jam", "Sepanjang Hari"))
-    modal = str(params.get("modal", "10000"))
+    tipe_modal = str(params.get("tipe_modal", "Modal Tidak Terbatas"))
+    modal_harian = str(params.get("modal_harian", "10000"))
 
     tujuan_map = {
         "Tingkatkan Penonton": "iklan.tujuan_penonton",
         "GMV (Max Auto)": "iklan.tujuan_gmv_auto",
         "GMV (Max ROAS)": "iklan.tujuan_gmv_roas",
-        "GMV Max Auto": "iklan.tujuan_gmv_auto",
-        "GMV Max ROAS": "iklan.tujuan_gmv_roas",
     }
     durasi_map = {
         "Tak Terbatas": "iklan.durasi_tak_terbatas",
@@ -112,6 +118,7 @@ def build_iklan_live(profile: dict[str, Any], params: dict[str, Any], settings: 
         "3 hari": "iklan.durasi_3",
         "7 hari": "iklan.durasi_7",
         "14 hari": "iklan.durasi_14",
+        "Atur Sendiri": "iklan.durasi_custom",
     }
     jam_map = {
         "Sepanjang Hari": "iklan.jam_all",
@@ -119,54 +126,99 @@ def build_iklan_live(profile: dict[str, Any], params: dict[str, Any], settings: 
         "1 Jam": "iklan.jam_1h",
         "2 Jam": "iklan.jam_2h",
         "4 Jam": "iklan.jam_4h",
+        "Atur Sendiri": "iklan.jam_custom",
     }
+    roas_map = {
+        "ROAS = 5.4": "iklan.roas_54",
+        "ROAS = 8.0": "iklan.roas_80",
+        "ROAS = 9.7": "iklan.roas_97",
+        "Masukan Target": "iklan.roas_custom",
+    }
+
     if tujuan not in tujuan_map:
         raise ValueError(f"Invalid tujuan: {tujuan}")
     if durasi_hari not in durasi_map:
         raise ValueError(f"Invalid durasi_hari: {durasi_hari}")
-    if durasi_jam not in jam_map:
-        raise ValueError(f"Invalid durasi_jam: {durasi_jam}")
 
     steps = [
         _tap_step("home.iklan_live", profile, delay + 3500, "Open Iklan Live"),
         _tap_step("iklan.tujuan_dropdown", profile, delay + 1000, "Buka Opsi Tujuan"),
-        _tap_step(tujuan_map[tujuan], profile, delay, f"Tujuan {tujuan}"),
-        _tap_step("iklan.tujuan_konfirmasi", profile, delay + 2500, "Konfirmasi Tujuan"),
     ]
+    
+    # 1. Select Main Tujuan in Popup
+    if tujuan == "Tingkatkan Penonton":
+        steps.append(_tap_step("iklan.tujuan_penonton", profile, delay, "Tujuan Tingkatkan Penonton", text_target="Tingkatkan Penonton"))
+    else:
+        # Both GMV Max Auto and GMV Max ROAS require selecting "GMV Max" in the popup first
+        steps.append(_tap_step("iklan.tujuan_gmv_max_popup", profile, delay, "Tujuan GMV Max", text_target="GMV Max"))
+        
+    steps.append(_tap_step("iklan.tujuan_konfirmasi", profile, delay + 2500, "Konfirmasi Tujuan", text_target="Konfirmasi"))
+
+    # 2. Select Sub-Tujuan on Main Screen (if GMV Max)
+    if tujuan == "GMV (Max Auto)":
+        steps.append(_tap_step("iklan.tujuan_gmv_auto", profile, delay, "Pilih GMV Max Auto", text_target="GMV Max Auto"))
+    elif tujuan == "GMV (Max ROAS)":
+        steps.append(_tap_step("iklan.tujuan_gmv_roas", profile, delay, "Pilih GMV Max ROAS", text_target="GMV Max ROAS"))
+
+    # Swipe down to ensure Durasi / Modal are visible
+    steps.append({
+        "kind": "swipe",
+        "x1": 50,
+        "y1": 80,
+        "x2": 50,
+        "y2": 20,
+        "duration_ms": 500,
+        "delay_ms": delay + 500,
+        "note": "Scroll down",
+    })
+
+    if tujuan == "GMV (Max ROAS)":
+        if roas not in roas_map:
+            raise ValueError(f"Invalid ROAS: {roas}")
+        steps.append(_tap_step(roas_map[roas], profile, delay, f"Select ROAS {roas}", text_target=roas))
+        if roas == "Masukan Target":
+            steps.append({
+                "kind": "input_text",
+                "content": roas_custom,
+                "delay_ms": delay,
+                "note": f"Type ROAS {roas_custom}",
+            })
+            steps.append({"kind": "push", "type": 4, "delay_ms": delay, "note": "Dismiss Keyboard (BACK)"})
+            
+    # Swipe down again to ensure Durasi / Modal are fully visible (since ROAS expands the view)
+    steps.append({
+        "kind": "swipe",
+        "x1": 50,
+        "y1": 80,
+        "x2": 50,
+        "y2": 20,
+        "duration_ms": 500,
+        "delay_ms": delay + 500,
+        "note": "Scroll down 2",
+    })
+
+    steps.append(_tap_step(durasi_map[durasi_hari], profile, delay, f"Durasi Hari {durasi_hari}", text_target=durasi_hari))
 
     if tujuan == "Tingkatkan Penonton":
-        steps.append({
-            "kind": "swipe",
-            "x1": 50,
-            "y1": 80,
-            "x2": 50,
-            "y2": 20,
-            "duration_ms": 500,
-            "delay_ms": delay + 500,
-            "note": "Scroll down for options",
-        })
-        steps.append({
-            "kind": "swipe",
-            "x1": 50,
-            "y1": 80,
-            "x2": 50,
-            "y2": 20,
-            "duration_ms": 500,
-            "delay_ms": delay + 1000,
-            "note": "Scroll down for options (second swipe to ensure bottom)",
-        })
+        if durasi_jam not in jam_map:
+            raise ValueError(f"Invalid durasi_jam: {durasi_jam}")
+        steps.append(_tap_step(jam_map[durasi_jam], profile, delay, f"Durasi Jam {durasi_jam}", text_target=durasi_jam))
 
-    steps.extend([
-        _tap_step(durasi_map[durasi_hari], profile, delay, f"Durasi Hari {durasi_hari}"),
-        _tap_step(jam_map[durasi_jam], profile, delay, f"Durasi Jam {durasi_jam}"),
-        _tap_step("iklan.modal_dropdown", profile, delay + 800, "Buka Opsi Modal"),
-        _tap_step("iklan.modal_pilih_atur_harian", profile, delay, "Pilih Atur Modal Harian"),
-        _tap_step("iklan.modal_input", profile, delay, "Focus Modal"),
-        {"kind": "input_text", "content": modal, "delay_ms": delay, "note": f"Input Modal {modal}"},
-        {"kind": "push", "type": 4, "delay_ms": delay, "note": "Dismiss Keyboard (BACK)"},
-        _tap_step("iklan.modal_selanjutnya", profile, delay + 600, "Selanjutnya (Modal)"),
-        _tap_step("iklan.aktifkan", profile, delay + 400, "Aktifkan Iklan"),
-    ])
+    steps.append(_tap_step("iklan.modal", profile, delay + 800, "Buka Opsi Modal", text_target="Modal Tidak Terbatas"))
+    if tipe_modal == "Modal Tidak Terbatas":
+        steps.append(_tap_step("iklan.modal_unlimited", profile, delay, "Select Modal Tidak Terbatas", text_target="Modal Tidak Terbatas"))
+    else:
+        steps.append(_tap_step("iklan.modal_daily", profile, delay, "Select Atur Modal Harian", text_target="Atur Modal Harian"))
+        steps.append({
+            "kind": "input_text",
+            "content": modal_harian,
+            "delay_ms": delay,
+            "note": f"Type Modal {modal_harian}",
+        })
+        steps.append({"kind": "push", "type": 4, "delay_ms": delay, "note": "Dismiss Keyboard (BACK)"})
+    
+    steps.append(_tap_step("iklan.modal_selanjutnya", profile, delay + 1000, "Selanjutnya (Modal)", text_target="Selanjutnya"))
+    steps.append(_tap_step("iklan.aktifkan", profile, delay + 400, "Aktifkan Iklan", text_target="Aktifkan Iklan"))
     return steps
 
 
