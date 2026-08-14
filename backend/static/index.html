@@ -202,8 +202,12 @@
               </select>
             </div>
             <div class="field" id="iklan-modal-harian-field" style="display: none;">
-              <label>Modal Harian (Rp)</label>
+              <label>Modal Harian (Buat Baru)</label>
               <input id="iklan-modal-harian" type="number" value="10000" />
+            </div>
+            <div class="field" id="iklan-penambahan-modal-field" style="display: none;">
+              <label>Penambahan Modal (Top Up)</label>
+              <input id="iklan-penambahan-modal" type="number" value="5000" />
             </div>
           </div>
           <script>
@@ -234,10 +238,13 @@
               
               const modalTipe = document.getElementById("iklan-tipe-modal").value;
               const modalHarian = document.getElementById("iklan-modal-harian-field");
+              const penambahanModal = document.getElementById("iklan-penambahan-modal-field");
               if (modalTipe === "Atur Modal Harian") {
                 modalHarian.style.display = "block";
+                penambahanModal.style.display = "block";
               } else {
                 modalHarian.style.display = "none";
+                penambahanModal.style.display = "none";
               }
             }
           </script>
@@ -435,7 +442,7 @@
     </div>
   </main>
 
-  <script src="/static/app.js?v=3"></script>
+  <script src="/static/app.js?v=4"></script>
 </body>
 
 </html>

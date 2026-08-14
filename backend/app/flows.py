@@ -142,26 +142,29 @@ def build_iklan_live(profile: dict[str, Any], params: dict[str, Any], settings: 
 
     steps = [
         _tap_step("home.iklan_live", profile, delay + 3500, "Open Iklan Live"),
-        _tap_step("iklan.tujuan_dropdown", profile, delay + 1000, "Buka Opsi Tujuan"),
+    ]
+    
+    fallback_steps = [
+        _tap_step("iklan.tujuan_dropdown", profile, delay + 1000, "Buka Opsi Tujuan", text_target="GMV Max"),
     ]
     
     # 1. Select Main Tujuan in Popup
     if tujuan == "Tingkatkan Penonton":
-        steps.append(_tap_step("iklan.tujuan_penonton", profile, delay, "Tujuan Tingkatkan Penonton", text_target="Tingkatkan Penonton"))
+        fallback_steps.append(_tap_step("iklan.tujuan_penonton", profile, delay, "Tujuan Tingkatkan Penonton", text_target="Penonton"))
     else:
         # Both GMV Max Auto and GMV Max ROAS require selecting "GMV Max" in the popup first
-        steps.append(_tap_step("iklan.tujuan_gmv_max_popup", profile, delay, "Tujuan GMV Max", text_target="GMV Max"))
+        fallback_steps.append(_tap_step("iklan.tujuan_gmv_max_popup", profile, delay, "Tujuan GMV Max", text_target="GMV Max"))
         
-    steps.append(_tap_step("iklan.tujuan_konfirmasi", profile, delay + 2500, "Konfirmasi Tujuan", text_target="Konfirmasi"))
+    fallback_steps.append(_tap_step("iklan.tujuan_konfirmasi", profile, delay + 2500, "Konfirmasi Tujuan", text_target="Konfirmasi"))
 
     # 2. Select Sub-Tujuan on Main Screen (if GMV Max)
     if tujuan == "GMV (Max Auto)":
-        steps.append(_tap_step("iklan.tujuan_gmv_auto", profile, delay, "Pilih GMV Max Auto", text_target="GMV Max Auto"))
+        fallback_steps.append(_tap_step("iklan.tujuan_gmv_auto", profile, delay, "Pilih GMV Max Auto", text_target="GMV Max Auto"))
     elif tujuan == "GMV (Max ROAS)":
-        steps.append(_tap_step("iklan.tujuan_gmv_roas", profile, delay, "Pilih GMV Max ROAS", text_target="GMV Max ROAS"))
+        fallback_steps.append(_tap_step("iklan.tujuan_gmv_roas", profile, delay, "Pilih GMV Max ROAS", text_target="GMV Max ROAS"))
 
     # Swipe down to ensure Durasi / Modal are visible
-    steps.append({
+    fallback_steps.append({
         "kind": "swipe",
         "x1": 50,
         "y1": 80,
@@ -175,18 +178,17 @@ def build_iklan_live(profile: dict[str, Any], params: dict[str, Any], settings: 
     if tujuan == "GMV (Max ROAS)":
         if roas not in roas_map:
             raise ValueError(f"Invalid ROAS: {roas}")
-        steps.append(_tap_step(roas_map[roas], profile, delay, f"Select ROAS {roas}", text_target=roas))
+        fallback_steps.append(_tap_step(roas_map[roas], profile, delay, f"Select ROAS {roas}", text_target=roas))
         if roas == "Masukan Target":
-            steps.append({
+            fallback_steps.append({
                 "kind": "input_text",
                 "content": roas_custom,
                 "delay_ms": delay,
                 "note": f"Type ROAS {roas_custom}",
             })
-            steps.append({"kind": "push", "type": 4, "delay_ms": delay, "note": "Dismiss Keyboard (BACK)"})
             
     # Swipe down again to ensure Durasi / Modal are fully visible (since ROAS expands the view)
-    steps.append({
+    fallback_steps.append({
         "kind": "swipe",
         "x1": 50,
         "y1": 80,
@@ -197,28 +199,36 @@ def build_iklan_live(profile: dict[str, Any], params: dict[str, Any], settings: 
         "note": "Scroll down 2",
     })
 
-    steps.append(_tap_step(durasi_map[durasi_hari], profile, delay, f"Durasi Hari {durasi_hari}", text_target=durasi_hari))
+    fallback_steps.append(_tap_step(durasi_map[durasi_hari], profile, delay, f"Durasi Hari {durasi_hari}", text_target=durasi_hari))
 
     if tujuan == "Tingkatkan Penonton":
         if durasi_jam not in jam_map:
             raise ValueError(f"Invalid durasi_jam: {durasi_jam}")
-        steps.append(_tap_step(jam_map[durasi_jam], profile, delay, f"Durasi Jam {durasi_jam}", text_target=durasi_jam))
+        fallback_steps.append(_tap_step(jam_map[durasi_jam], profile, delay, f"Durasi Jam {durasi_jam}", text_target=durasi_jam))
 
-    steps.append(_tap_step("iklan.modal", profile, delay + 800, "Buka Opsi Modal", text_target="Modal Tidak Terbatas"))
+    fallback_steps.append(_tap_step("iklan.modal", profile, delay + 800, "Buka Opsi Modal", text_target="Modal Tidak Terbatas"))
     if tipe_modal == "Modal Tidak Terbatas":
-        steps.append(_tap_step("iklan.modal_unlimited", profile, delay, "Select Modal Tidak Terbatas", text_target="Modal Tidak Terbatas"))
+        fallback_steps.append(_tap_step("iklan.modal_unlimited", profile, delay, "Select Modal Tidak Terbatas", text_target="Modal Tidak Terbatas"))
     else:
-        steps.append(_tap_step("iklan.modal_daily", profile, delay, "Select Atur Modal Harian", text_target="Atur Modal Harian"))
-        steps.append({
+        fallback_steps.append(_tap_step("iklan.modal_daily", profile, delay, "Select Atur Modal Harian", text_target="Atur Modal Harian"))
+        fallback_steps.append({
             "kind": "input_text",
             "content": modal_harian,
             "delay_ms": delay,
             "note": f"Type Modal {modal_harian}",
         })
-        steps.append({"kind": "push", "type": 4, "delay_ms": delay, "note": "Dismiss Keyboard (BACK)"})
     
-    steps.append(_tap_step("iklan.modal_selanjutnya", profile, delay + 1000, "Selanjutnya (Modal)", text_target="Selanjutnya"))
-    steps.append(_tap_step("iklan.aktifkan", profile, delay + 400, "Aktifkan Iklan", text_target="Aktifkan Iklan"))
+    fallback_steps.append(_tap_step("iklan.modal_selanjutnya", profile, delay + 1000, "Selanjutnya (Modal)", text_target="Selanjutnya"))
+    fallback_steps.append(_tap_step("iklan.aktifkan", profile, delay + 400, "Aktifkan Iklan", text_target="Aktifkan Iklan"))
+    
+    # Inject dynamic step
+    steps.append({
+        "kind": "dynamic_iklan_live",
+        "penambahan_modal": params.get("penambahan_modal", 5000),
+        "fallback_steps": fallback_steps,
+        "delay_ms": delay
+    })
+
     return steps
 
 

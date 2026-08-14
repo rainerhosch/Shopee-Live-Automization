@@ -85,6 +85,52 @@ class AdbClient:
         await log_bus.error(f"❌ Teks '{text}' tidak ditemukan setelah {timeout} detik.")
         return False
 
+    async def read_text_by_regex(self, devices: str, pattern: str, timeout: int = 5) -> dict | None:
+        """
+        Mencari node berdasarkan regex dan mengembalikan data node (termasuk text dan center).
+        """
+        from .vision import dump_ui, find_node_by_regex
+        from .logger import log_bus
+        import time
+        
+        await log_bus.info(f"🔍 Mencari pola regex '{pattern}' di layar...")
+        start = time.time()
+        while time.time() - start < timeout:
+            root = await dump_ui(self, devices)
+            node = find_node_by_regex(root, pattern)
+            if node:
+                await log_bus.info(f"🎯 Ditemukan cocok dengan regex '{pattern}': '{node['text']}'")
+                return node
+            await asyncio.sleep(1)
+            
+        await log_bus.error(f"❌ Pola regex '{pattern}' tidak ditemukan setelah {timeout} detik.")
+        return None
+        
+    async def read_all_text_by_regex(self, devices: str, pattern: str, timeout: int = 5) -> list[dict]:
+        from .vision import dump_ui, find_all_nodes_by_regex
+        await log_bus.info(f"🔍 Mencari semua pola regex '{pattern}' di layar...")
+        end_time = asyncio.get_event_loop().time() + timeout
+        
+        while asyncio.get_event_loop().time() < end_time:
+            root = await dump_ui(self, devices)
+            nodes = find_all_nodes_by_regex(root, pattern)
+            if nodes:
+                await log_bus.info(f"🎯 Ditemukan {len(nodes)} node cocok dengan regex '{pattern}'")
+                return nodes
+            await asyncio.sleep(1)
+            
+        await log_bus.error(f"❌ Pola regex '{pattern}' tidak ditemukan setelah {timeout} detik.")
+        return []
+
+    async def check_text_exists(self, devices: str, text: str) -> bool:
+        """
+        Mengecek apakah suatu teks ada di layar tanpa melakukan tap (single check).
+        """
+        from .vision import dump_ui, find_node_by_text
+        root = await dump_ui(self, devices)
+        return find_node_by_text(root, text) is not None
+
+
     async def ensure(self) -> None:
         if not self.connected:
             await self.connect()

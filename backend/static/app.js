@@ -314,6 +314,7 @@
           durasi_jam: $("iklan-durasi-jam").value,
           tipe_modal: $("iklan-tipe-modal").value,
           modal_harian: num($("iklan-modal-harian").value, 10000),
+          penambahan_modal: num($("iklan-penambahan-modal").value, 5000),
         },
       };
     }

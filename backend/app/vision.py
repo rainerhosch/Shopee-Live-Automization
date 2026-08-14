@@ -1,5 +1,6 @@
 import xml.etree.ElementTree as ET
 import asyncio
+import re
 from typing import Tuple, Optional
 import io
 import time
@@ -61,6 +62,67 @@ def find_node_by_text(root: ET.Element, text: str) -> Optional[dict]:
                 return {
                     "text": node.attrib.get('text', ''),
                     "desc": node.attrib.get('content-desc', ''),
+                    "bounds": (x1, y1, x2, y2),
+                    "center": (x1 + (x2 - x1) // 2, y1 + (y2 - y1) // 2)
+                }
+        for child in node:
+            queue.append(child)
+            
+    return None
+
+def find_all_nodes_by_regex(root: ET.Element, pattern: str) -> list[dict]:
+    """
+    Mencari semua node yang memiliki text atau content-desc sesuai dengan regex pattern.
+    """
+    if root is None:
+        return []
+    
+    prog = re.compile(pattern, re.IGNORECASE)
+    results = []
+    queue = [root]
+    while queue:
+        node = queue.pop(0)
+        node_text = node.attrib.get('text', '')
+        node_desc = node.attrib.get('content-desc', '')
+        
+        if prog.search(node_text) or prog.search(node_desc):
+            bounds_str = node.attrib.get('bounds')
+            if bounds_str:
+                bounds_str = bounds_str.replace('][', ',').replace('[', '').replace(']', '')
+                x1, y1, x2, y2 = map(int, bounds_str.split(','))
+                results.append({
+                    "text": node_text,
+                    "desc": node_desc,
+                    "bounds": (x1, y1, x2, y2),
+                    "center": (x1 + (x2 - x1) // 2, y1 + (y2 - y1) // 2)
+                })
+        for child in node:
+            queue.append(child)
+            
+    return results
+
+def find_node_by_regex(root: ET.Element, pattern: str) -> Optional[dict]:
+    """
+    Mencari node yang memiliki text atau content-desc sesuai dengan regex pattern.
+    """
+    if root is None:
+        return None
+    
+    prog = re.compile(pattern, re.IGNORECASE)
+    queue = [root]
+    while queue:
+        node = queue.pop(0)
+        node_text = node.attrib.get('text', '')
+        node_desc = node.attrib.get('content-desc', '')
+        
+        if prog.search(node_text) or prog.search(node_desc):
+            bounds_str = node.attrib.get('bounds')
+            if bounds_str:
+                bounds_str = bounds_str.replace('][', ',').replace('[', '').replace(']', '')
+                x1, y1, x2, y2 = map(int, bounds_str.split(','))
+                return {
+                    "text": node_text,
+                    "desc": node_desc,
                     "bounds": (x1, y1, x2, y2),
                     "center": (x1 + (x2 - x1) // 2, y1 + (y2 - y1) // 2)
                 }

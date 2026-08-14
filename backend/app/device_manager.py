@@ -39,6 +39,21 @@ class DeviceManager:
             return await self.client.tap_text(devices, text, timeout=timeout)
         return False
 
+    async def check_text_exists(self, devices: str, text: str) -> bool:
+        if hasattr(self.client, "check_text_exists"):
+            return await self.client.check_text_exists(devices, text)
+        return False
+
+    async def read_text_by_regex(self, devices: str, pattern: str, timeout: int = 5) -> dict | None:
+        if hasattr(self.client, "read_text_by_regex"):
+            return await self.client.read_text_by_regex(devices, pattern, timeout=timeout)
+        return None
+
+    async def read_all_text_by_regex(self, devices: str, pattern: str, timeout: int = 5) -> list[dict]:
+        if hasattr(self.client, "read_all_text_by_regex"):
+            return await self.client.read_all_text_by_regex(devices, pattern, timeout=timeout)
+        return []
+
     async def swipe(self, devices: str, x1: str | float, y1: str | float, x2: str | float, y2: str | float, duration_ms: int = 500, *, dry_run: bool = False) -> dict[str, Any]:
         if hasattr(self.client, "swipe"):
             return await self.client.swipe(devices, x1, y1, x2, y2, duration_ms=duration_ms, dry_run=dry_run)
