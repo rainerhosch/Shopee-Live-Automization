@@ -30,7 +30,7 @@ The system operates on a client-server model:
 ### Environment Preparation
 
 ```powershell
-cd C:\Users\oktan\Work\Project\Shopee-Automization
+cd Shopee-Automization
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
