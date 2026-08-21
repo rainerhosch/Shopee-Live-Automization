@@ -11,24 +11,54 @@ class AdbClient:
         self.connected = False
         self._screen_sizes: dict[str, tuple[int, int]] = {}
 
-    def get_adb_path(self) -> str:
+    async def get_adb_path(self) -> str:
         settings = cfg.load_settings()
         path = settings.get("adb_path") or "adb"
         if path == "adb":
-            # Auto-detect localappdata if available on Windows
-            localappdata = os.environ.get("LOCALAPPDATA")
-            if localappdata:
-                auto_path = os.path.join(localappdata, "Android", "Sdk", "platform-tools", "adb.exe")
-                if os.path.exists(auto_path):
-                    return auto_path
+            return await self._ensure_adb_downloaded()
         return path
+
+    async def _ensure_adb_downloaded(self) -> str:
+        # Check local bin/platform-tools/adb.exe first
+        bin_dir = os.path.join(os.getcwd(), "bin")
+        local_adb = os.path.join(bin_dir, "platform-tools", "adb.exe")
+        if os.path.exists(local_adb):
+            return local_adb
+
+        # Auto-detect localappdata if available on Windows
+        localappdata = os.environ.get("LOCALAPPDATA")
+        if localappdata:
+            auto_path = os.path.join(localappdata, "AndroidX", "Sdk", "platform-tools", "adb.exe")
+            if os.path.exists(auto_path):
+                return auto_path
+
+        from .logger import log_bus
+        import urllib.request
+        import zipfile
+        import io
+        import asyncio
+        
+        await log_bus.info("ADB tidak ditemukan. Mengunduh platform-tools dari Google...")
+        os.makedirs(bin_dir, exist_ok=True)
+        url = "https://dl.google.com/android/repository/platform-tools-latest-windows.zip"
+        
+        loop = asyncio.get_event_loop()
+        def download_and_extract():
+            with urllib.request.urlopen(url) as response:
+                with zipfile.ZipFile(io.BytesIO(response.read())) as z:
+                    z.extractall(bin_dir)
+                    
+        await loop.run_in_executor(None, download_and_extract)
+        await log_bus.info(f"ADB berhasil diunduh ke {local_adb}")
+        return local_adb
 
     async def _run_adb(self, *args: str) -> tuple[int, str, str]:
         code, stdout, stderr = await self._run_adb_bytes(*args)
         return code, stdout.decode(errors='replace').strip(), stderr.decode(errors='replace').strip()
 
     async def _run_adb_bytes(self, *args: str) -> tuple[int, bytes, bytes]:
-        cmd = [self.get_adb_path(), *args]
+        adb_path = await self.get_adb_path()
+        cmd = [adb_path, *args]
         
         kwargs = {}
         if os.name == 'nt':
@@ -44,11 +74,12 @@ class AdbClient:
         return proc.returncode or 0, stdout, stderr
 
     async def connect(self) -> None:
+        adb_path = await self.get_adb_path()
         code, out, err = await self._run_adb("start-server")
         if code != 0:
             raise RuntimeError(f"Failed to start ADB server: {err}")
         self.connected = True
-        await log_bus.info(f"\nADB connected using {self.get_adb_path()}")
+        await log_bus.info(f"\nADB connected using {adb_path}")
 
     async def close(self) -> None:
         self.connected = False
