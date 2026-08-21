@@ -258,3 +258,276 @@ a { color: var(--info); }
   display: flex; justify-content: space-between; align-items: center; gap: .5rem;
   margin-bottom: .5rem;
 }
+
+/* SIDEBAR LAYOUT */
+body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--fg);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  height: 100vh; overflow: hidden;
+}
+
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.app-sidebar {
+  width: 250px;
+  background: #121923;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s ease;
+  flex-shrink: 0;
+}
+
+.app-sidebar.collapsed {
+  width: 60px;
+}
+
+.app-sidebar .brand {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.app-sidebar.collapsed .brand-text {
+  display: none;
+}
+
+.app-sidebar .brand h1 { font-size: 1rem; margin: 0; }
+.app-sidebar .brand p { font-size: 0.75rem; margin: 0; color: var(--muted); }
+
+.sidebar-nav {
+  padding: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.nav-item {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  text-align: left;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.nav-item:hover {
+  background: rgba(255,255,255,0.05);
+  color: var(--fg);
+}
+
+.nav-item.active {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--accent);
+  border-right: 3px solid var(--accent);
+}
+
+.app-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.view-panel {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+.view-panel.hidden {
+  display: none !important;
+}
+
+/* MONITORING GRID */
+.monitor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.monitor-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  cursor: pointer;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.monitor-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+}
+
+.monitor-card header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+}
+
+.monitor-card .device-title {
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: var(--accent);
+}
+
+.monitor-card .status-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+
+.monitor-card .task-active {
+  font-weight: 500;
+  color: var(--ok);
+}
+
+.monitor-card .queue-info {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* MODERN SIDEBAR OVERRIDES */
+.app-sidebar {
+  width: 260px;
+  background-color: #0f172a; /* Tailwind Slate-900 */
+  border-right: 1px solid #1e293b; /* Tailwind Slate-800 */
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-sidebar.collapsed {
+  width: 72px;
+}
+
+.app-sidebar .brand {
+  height: 72px;
+  padding: 0 20px;
+  border-bottom: 1px solid #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.brand-text {
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.app-sidebar.collapsed .brand-text {
+  opacity: 0;
+  transform: translateX(-10px);
+  pointer-events: none;
+  display: block; /* override previous display:none to allow transition */
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 24px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 48px;
+  padding: 0 12px;
+  border-radius: 8px;
+  color: #94a3b8; /* Slate-400 */
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: background-color 0.2s, color 0.2s;
+  overflow: hidden;
+  border: none;
+  background: transparent;
+  width: 100%;
+}
+
+.nav-item svg {
+  min-width: 22px;
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+}
+
+.nav-text {
+  transition: opacity 0.2s, transform 0.2s;
+  white-space: nowrap;
+}
+
+.app-sidebar.collapsed .nav-text {
+  opacity: 0;
+  transform: translateX(-10px);
+  pointer-events: none;
+}
+
+.nav-item:hover {
+  background-color: #1e293b;
+  color: #f8fafc;
+}
+
+.nav-item.active {
+  background-color: rgba(56, 189, 248, 0.1);
+  color: #38bdf8;
+  border-right: none;
+}
+
+.sidebar-footer {
+  padding: 16px 12px;
+  border-top: 1px solid #1e293b;
+}
+
+.sidebar-footer .toggle-btn {
+  justify-content: flex-start;
+}
+
+.app-sidebar.collapsed .chevron-icon {
+  transform: rotate(180deg);
+  transition: transform 0.3s;
+}
+
+.chevron-icon {
+  transition: transform 0.3s;
+}
+
+/* CSS FIXES FOR COLLAPSED SIDEBAR */
+.app-sidebar.collapsed .nav-item {
+  width: 48px; /* Shrink button so it doesn't overflow */
+}
+
+.app-sidebar.collapsed .nav-text {
+  display: none; /* Hide text completely to prevent layout stretching */
+}
+
+/* Prevent SVG from swallowing clicks */
+.nav-item svg {
+  pointer-events: none;
+}

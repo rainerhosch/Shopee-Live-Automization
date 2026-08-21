@@ -4,27 +4,65 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Shopee Live Bot Manager</title>
-  <link rel="stylesheet" href="/static/styles.css" />
+  <link rel="stylesheet" href="/static/styles.css?v=3" />
+  <link rel="icon" type="image/x-icon" href="/assets/image/favicon.ico" />
 </head>
 
 <body>
-  <header class="app-header">
-    <div class="brand">
-      <div class="brand-mark">S</div>
-      <div>
-        <h1>Shopee Live Bot Manager</h1>
-        <p>Manager Panel · Support Direct ADB listener or Panda screen projection.</p>
+  <div class="app-container">
+    <!-- SIDEBAR -->
+    <aside class="app-sidebar" id="app-sidebar">
+      <div class="brand">
+        <img src="/assets/image/Icon-240x240.png" alt="Logo" style="width: 32px; height: 32px; object-fit: contain;" />
+        <div class="brand-text" style="flex:1">
+          <h1>Shopee Bot</h1>
+          <p>Manager Panel</p>
+        </div>
       </div>
-    </div>
-    <div class="badges">
-      <span class="badge" id="badge-panda"><span class="dot"></span> Panda</span>
-      <span class="badge" id="badge-bot"><span class="dot"></span> Bot</span>
-      <span class="badge" id="badge-dry"><span class="dot"></span> Mode</span>
-    </div>
-  </header>
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-view="monitor">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+          <span class="nav-text">Monitoring</span>
+        </button>
+        <button class="nav-item" data-view="config">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          <span class="nav-text">Configure Task</span>
+        </button>
+        <button class="nav-item" data-view="calibration">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+          <span class="nav-text">Calibration</span>
+        </button>
+      </nav>
+      <!-- Bottom toggle button for modern look -->
+      <div class="sidebar-footer">
+        <button id="btn-toggle-sidebar" class="nav-item toggle-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chevron-icon"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          <span class="nav-text">Collapse</span>
+        </button>
+      </div>
+    </aside>
 
-  <main class="layout">
+    <div class="app-content">
+      <!-- Original Header -->
+      <header class="app-header" style="flex-shrink:0">
+        <div class="badges">
+          <span class="badge" id="badge-panda">Checking Panda...</span>
+          <span class="badge" id="badge-bot">Bot status</span>
+          <span class="badge" id="badge-dry">Dry-run</span>
+        </div>
+      </header>
+
+      <!-- VIEW: MONITOR -->
+      <main id="view-monitor" class="view-panel">
+        <h2>Monitoring Dashboard</h2>
+        <div class="monitor-grid" id="monitor-grid">
+          <div class="muted">Loading devices...</div>
+        </div>
+      </main>
+
+      <!-- VIEW: CONFIG -->
+      <main id="view-config" class="view-panel hidden layout" style="padding: 1.5rem;">
+        
     <!-- LEFT -->
     <div class="stack">
       <section class="panel">
@@ -81,7 +119,7 @@
     <div class="stack">
       <section class="panel">
         <div class="section-title">
-          <h2 style="margin:0">Task Creation</h2>
+          <h2 style="margin:0">Task Creation <span id="header-dev-1" style="font-size: 0.8rem; color: var(--accent); font-weight: normal; margin-left: 0.5rem;"></span></h2>
         </div>
         <div class="tabs" id="task-tabs">
           <button class="tab active" data-tab="lelang">Lelang</button>
@@ -306,7 +344,7 @@
 
       <section class="panel">
         <div class="section-title">
-          <h2 style="margin:0">Active Execution & Queue</h2>
+          <h2 style="margin:0">Active Execution & Queue <span id="header-dev-2" style="font-size: 0.8rem; color: var(--accent); font-weight: normal; margin-left: 0.5rem;"></span></h2>
           <button class="btn btn-sm btn-danger" id="btn-clear-queue">Clear Queue</button>
         </div>
         <div style="margin-top: .75rem;">
@@ -321,7 +359,7 @@
 
       <section class="panel">
         <div class="section-title">
-          <h2 style="margin:0">Scheduled Tasks</h2>
+          <h2 style="margin:0">Scheduled Tasks <span id="header-dev-3" style="font-size: 0.8rem; color: var(--accent); font-weight: normal; margin-left: 0.5rem;"></span></h2>
           <div>
             <button class="btn btn-sm btn-ok" id="btn-start">Start All</button>
             <button class="btn btn-sm btn-warn" id="btn-pause">Pause All</button>
@@ -335,7 +373,27 @@
         </div>
       </section>
 
-      <section class="panel" id="calibration-panel">
+      
+    </div>
+
+    <!-- RIGHT -->
+    <div class="stack">
+
+      <section class="panel">
+        <div class="section-title">
+          <h2 style="margin:0">Live Logs</h2>
+          <button class="btn btn-sm" id="btn-clear-logs">Clear view</button>
+        </div>
+        <div class="log-box" id="log-box"></div>
+      </section>
+    </div>
+  
+      </main>
+
+      <!-- VIEW: CALIBRATION -->
+      <main id="view-calibration" class="view-panel hidden" style="padding: 1.5rem;">
+        <h2>Coordinate Calibration</h2>
+        <section class="panel" id="calibration-panel">
         <div class="section-title">
           <h2 style="margin:0">Coordinate Calibration · Admin Live</h2>
           <div>
@@ -405,22 +463,11 @@
           </div>
         </div>
       </section>
+      </main>
     </div>
+  </div>
 
-    <!-- RIGHT -->
-    <div class="stack">
-
-      <section class="panel">
-        <div class="section-title">
-          <h2 style="margin:0">Live Logs</h2>
-          <button class="btn btn-sm" id="btn-clear-logs">Clear view</button>
-        </div>
-        <div class="log-box" id="log-box"></div>
-      </section>
-    </div>
-  </main>
-
-  <script src="/static/app.js?v=8"></script>
+  <script src="/static/app.js?v=13"></script>
 </body>
 
 </html>

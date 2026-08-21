@@ -13,9 +13,9 @@ from .device_manager import device_manager
 
 
 class BotScheduler:
-    def __init__(self) -> None:
+    def __init__(self, device: str) -> None:
         self.status: str = "stopped"  # stopped | running | paused
-        self.device: str = ""
+        self.device: str = device
         self.profile_name: str = "admin_live"
         self.dry_run: bool = True
         self.tasks: dict[str, dict[str, Any]] = {}
@@ -43,8 +43,6 @@ class BotScheduler:
 
     def reload_settings(self) -> dict[str, Any]:
         self._settings = cfg.load_settings()
-        if not self.device and self._settings.get("default_device"):
-            self.device = self._settings["default_device"]
         if self._settings.get("default_profile"):
             self.profile_name = self._settings["default_profile"]
         if "dry_run" in self._settings:
@@ -524,4 +522,18 @@ class BotScheduler:
         return []
 
 
-bot = BotScheduler()
+class BotManager:
+    def __init__(self):
+        self.bots: dict[str, BotScheduler] = {}
+
+    def get_bot(self, device: str) -> BotScheduler:
+        if not device:
+            # Fallback to default device setting if none provided
+            settings = cfg.load_settings()
+            device = settings.get("default_device", "default")
+        if device not in self.bots:
+            self.bots[device] = BotScheduler(device)
+            self.bots[device].reload_settings()
+        return self.bots[device]
+
+bot_manager = BotManager()

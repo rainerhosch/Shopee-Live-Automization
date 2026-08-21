@@ -22,12 +22,12 @@ from .models import (
 )
 from .paths import ASSETS_DIR, STATIC_DIR
 from .device_manager import device_manager
-from .scheduler import bot
+from .scheduler import bot_manager
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    settings = bot.reload_settings()
+    for bot in bot_manager.bots.values(): bot.reload_settings()
     await log_bus.info("Shopee Live Bot backend started")
     # Best-effort connect; dashboard still works offline
     try:
@@ -35,7 +35,7 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         await log_bus.warn(f"Client not available at startup: {exc}")
     yield
-    await bot.stop()
+    for bot in bot_manager.bots.values(): await bot.stop()
     await device_manager.close()
     await log_bus.info("Backend shutdown")
 
@@ -61,7 +61,7 @@ async def health() -> dict[str, Any]:
     return {
         "ok": True,
         "panda_connected": device_manager.connected,
-        "bot_status": bot.status,
+        "bot_status": "running" if any(b.status == "running" for b in bot_manager.bots.values()) else "stopped",
     }
 
 
@@ -74,7 +74,7 @@ async def get_settings() -> dict[str, Any]:
 async def put_settings(body: SettingsUpdate) -> dict[str, Any]:
     data = body.model_dump(exclude_none=True)
     saved = cfg.save_settings(data)
-    bot.reload_settings()
+    for bot in bot_manager.bots.values(): bot.reload_settings()
     if "connection_mode" in data or "panda_url" in data or "adb_path" in data:
         await device_manager.close()
         try:
@@ -123,28 +123,33 @@ async def panda_reconnect() -> dict[str, Any]:
         return {"ok": False, "connected": False, "error": str(exc)}
 
 
+@app.get("/api/bots")
+async def bots_status() -> dict[str, Any]:
+    return {dev: bot.snapshot() for dev, bot in bot_manager.bots.items()}
+
+
 @app.get("/api/bot")
-async def bot_status() -> dict[str, Any]:
-    return bot.snapshot()
+async def bot_status(device: str = None) -> dict[str, Any]:
+    return bot_manager.get_bot(device).snapshot()
 
 
 @app.post("/api/bot/control")
 async def bot_control(body: BotControl) -> dict[str, Any]:
     try:
         if body.action == "start":
-            return await bot.start(device=body.device, profile=body.profile, dry_run=body.dry_run)
+            return await bot_manager.get_bot(body.device).start(device=body.device, profile=body.profile, dry_run=body.dry_run)
         if body.action == "pause":
-            return await bot.pause()
+            return await bot_manager.get_bot(body.device).pause()
         if body.action == "stop":
-            return await bot.stop()
+            return await bot_manager.get_bot(body.device).stop()
     except Exception as exc:
         raise HTTPException(400, str(exc)) from exc
     raise HTTPException(400, "Unknown action")
 
 
 @app.get("/api/tasks")
-async def list_tasks() -> list[dict[str, Any]]:
-    return list(bot.tasks.values())
+async def list_tasks(device: str = None) -> list[dict[str, Any]]:
+    return list(bot_manager.get_bot(device).tasks.values())
 
 
 async def screen_streamer(device: str = None):
@@ -184,15 +189,15 @@ async def launch_scrcpy(device: str = None):
 
 
 @app.delete("/api/queue")
-async def clear_queue() -> dict[str, Any]:
-    bot.queue.clear()
-    return bot.snapshot()
+async def clear_queue(device: str = None) -> dict[str, Any]:
+    bot_manager.get_bot(device).queue.clear()
+    return bot_manager.get_bot(device).snapshot()
 
 
 @app.delete("/api/queue/{task_id}")
-async def remove_from_queue(task_id: str) -> dict[str, Any]:
-    bot.queue = [t for t in bot.queue if t["id"] != task_id]
-    return bot.snapshot()
+async def remove_from_queue(task_id: str, device: str = None) -> dict[str, Any]:
+    bot_manager.get_bot(device).queue = [t for t in bot_manager.get_bot(device).queue if t["id"] != task_id]
+    return bot_manager.get_bot(device).snapshot()
 
 
 @app.get("/api/screen")
@@ -207,37 +212,37 @@ async def get_screen(device: str):
 
 
 @app.post("/api/tasks")
-async def create_task(body: TaskCreate) -> dict[str, Any]:
-    task = bot.add_task(body.type, body.interval_sec, body.params, body.enabled)
+async def create_task(body: TaskCreate, device: str = None) -> dict[str, Any]:
+    task = bot_manager.get_bot(device).add_task(body.type, body.interval_sec, body.params, body.enabled)
     await log_bus.info(f"Task created {task['id']} type={task['type']}", task=task)
     return task
 
 
 @app.patch("/api/tasks/{task_id}")
-async def patch_task(task_id: str, body: TaskUpdate) -> dict[str, Any]:
+async def patch_task(task_id: str, body: TaskUpdate, device: str = None) -> dict[str, Any]:
     try:
-        task = bot.update_task(task_id, body.model_dump(exclude_none=True))
+        task = bot_manager.get_bot(device).update_task(task_id, body.model_dump(exclude_none=True))
     except KeyError as exc:
         raise HTTPException(404, "Task not found") from exc
     return task
 
 
 @app.delete("/api/tasks/{task_id}")
-async def delete_task(task_id: str) -> dict[str, Any]:
-    bot.remove_task(task_id)
+async def delete_task(task_id: str, device: str = None) -> dict[str, Any]:
+    bot_manager.get_bot(device).remove_task(task_id)
     return {"ok": True}
 
 
 @app.delete("/api/tasks")
-async def clear_tasks() -> dict[str, Any]:
-    bot.clear_tasks()
+async def clear_tasks(device: str = None) -> dict[str, Any]:
+    bot_manager.get_bot(device).clear_tasks()
     return {"ok": True}
 
 
 @app.post("/api/tasks/run-once")
 async def run_once(body: RunOnceRequest) -> dict[str, Any]:
     try:
-        results = await bot.run_once(
+        results = await bot_manager.get_bot(body.device).run_once(
             body.type,
             body.params,
             device=body.device,
@@ -311,7 +316,7 @@ async def calibrate_point(name: str, body: CalibratePoint, device: str = None) -
 
     tap_result = None
     if body.test_tap:
-        test_dev = device or body.device or bot.device or cfg.load_settings().get("default_device")
+        test_dev = device or getattr(body, "device", None) or cfg.load_settings().get("default_device")
         if not test_dev:
             raise HTTPException(400, "device required for test_tap")
         try:
