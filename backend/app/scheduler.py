@@ -262,6 +262,11 @@ class BotScheduler:
                 step["is_manual"] = task.get("manual", False)
                 result = await self._run_step(step, dry=dry, settle=settle)
                 results.append(result)
+
+                if not result.get("ok", True):
+                    error_msg = result.get("error", "Unknown error")
+                    await log_bus.error(f"Task aborted because step failed: {error_msg}")
+                    raise RuntimeError(f"Step '{step.get('note', step['kind'])}' failed")
                 
                 # Dynamic step injection
                 if result.get("new_steps"):
@@ -388,6 +393,13 @@ class BotScheduler:
                         "delay_ms": 4000,
                         "note": "Klik + Buat Iklan Baru"
                     })
+                # Cek dan tutup alert "Akan Diprioritaskan" jika ada
+                new_steps.append({
+                    "kind": "close_alert_if_exists",
+                    "text_target": "Akan Diprioritaskan",
+                    "delay_ms": 1000,
+                    "note": "Tutup alert jika ada"
+                })
                 # Inject all original 'Buat Baru' steps that were passed in 'fallback_steps'
                 new_steps.extend(step.get("fallback_steps", []))
             
@@ -400,7 +412,8 @@ class BotScheduler:
             # 1. Try finding by text (UI Automator) first
             if text_target and not dry:
                 if hasattr(device_manager, "tap_text"):
-                    success = await device_manager.tap_text(self.device, text_target)
+                    tap_right = step.get("tap_right_edge", False)
+                    success = await device_manager.tap_text(self.device, text_target, timeout=5, tap_right_edge=tap_right)
                     if success:
                         resp = {"code": 10000, "message": f"Text matched: {text_target}"}
             
@@ -447,6 +460,39 @@ class BotScheduler:
                 # Spam backspace 15 times (KEYCODE_DEL = 67)
                 for _ in range(15):
                     await device_manager.push_event(self.device, "67", dry_run=dry)
+            return {"ok": True, "step": step}
+
+        if kind == "close_alert_if_exists":
+            text_target = step.get("text_target", "")
+            if not dry and text_target:
+                has_alert = await device_manager.check_text_exists(self.device, text_target)
+                if has_alert:
+                    await log_bus.info(f"Alert '{text_target}' terdeteksi, menutup alert...")
+                    await device_manager.tap_text(self.device, text_target, tap_right_edge=True)
+                    await asyncio.sleep(1)
+            return {"ok": True, "step": step}
+
+        if kind == "tap_optional":
+            text_target = step.get("text_target", "")
+            if not dry and text_target:
+                has_text = await device_manager.check_text_exists(self.device, text_target)
+                if has_text:
+                    await log_bus.info(f"Tombol opsional '{text_target}' terdeteksi, menekan tombol...")
+                    await device_manager.tap_text(self.device, text_target)
+                    await asyncio.sleep(1)
+            return {"ok": True, "step": step}
+
+        if kind == "tap_image":
+            template_path = step.get("template_path", "")
+            threshold = step.get("threshold", 0.8)
+            if not dry and template_path:
+                await log_bus.info(f"🔍 Mencari gambar '{template_path}' di layar...")
+                success = await device_manager.tap_image(self.device, template_path, threshold)
+                if not success:
+                    await log_bus.error(f"❌ Gambar '{template_path}' tidak ditemukan.")
+                    # Let it continue or fail based on behavior? For now, we return error if not found.
+                    # If you want it to not fail the whole task, you can return {"ok": True} but typically we want it to fail if a mandatory button is missing.
+                    return {"ok": False, "error": f"Template {template_path} not found"}
             return {"ok": True, "step": step}
 
         raise ValueError(f"Unknown step kind: {kind}")

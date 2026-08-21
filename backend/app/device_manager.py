@@ -2,6 +2,8 @@ from typing import Any
 from . import config as cfg
 from .panda_client import panda
 from .adb_client import AdbClient
+from . import vision
+from .logger import log_bus
 
 adb_client = AdbClient()
 
@@ -34,9 +36,28 @@ class DeviceManager:
     async def tap(self, devices: str, x: str | float, y: str | float, *, settle_ms: int = 80, dry_run: bool = False) -> dict[str, Any]:
         return await self.client.tap(devices, x, y, settle_ms=settle_ms, dry_run=dry_run)
 
-    async def tap_text(self, devices: str, text: str, timeout: int = 3) -> bool:
+    async def tap_image(self, device_id: str, template_path: str, threshold: float = 0.8) -> bool:
+        client = self.client
+        screen_bytes = await self.screenshot_raw(device_id)
+        if not screen_bytes:
+            await log_bus.error("Gagal mengambil screenshot untuk tap_image")
+            return False
+            
+        match = vision.find_image_on_screen(screen_bytes, template_path, threshold)
+        if match and match["confidence"] >= threshold:
+            cx, cy = match["center_pct"]
+            conf = match["confidence"]
+            await log_bus.info(f"Gambar {template_path} ditemukan dengan confidence {conf:.2f} di ({cx}%, {cy}%)")
+            await self.tap(device_id, cx, cy)
+            return True
+        else:
+            actual_conf = match["confidence"] if match else 0.0
+            await log_bus.error(f"Gambar {template_path} tidak mencapai threshold {threshold} (Cuma dapat: {actual_conf:.2f})")
+            return False
+
+    async def tap_text(self, devices: str, text: str, timeout: int = 3, tap_right_edge: bool = False) -> bool:
         if hasattr(self.client, "tap_text"):
-            return await self.client.tap_text(devices, text, timeout=timeout)
+            return await self.client.tap_text(devices, text, timeout=timeout, tap_right_edge=tap_right_edge)
         return False
 
     async def check_text_exists(self, devices: str, text: str) -> bool:

@@ -62,7 +62,7 @@ class AdbClient:
             raise RuntimeError("Failed to get screencap")
         return bytes_data
 
-    async def tap_text(self, devices: str, text: str, timeout: int = 5) -> bool:
+    async def tap_text(self, devices: str, text: str, timeout: int = 5, tap_right_edge: bool = False) -> bool:
         """
         Mencari teks di layar (menggunakan UI Automator) dan melakukan tap jika ditemukan.
         """
@@ -77,7 +77,14 @@ class AdbClient:
             node = find_node_by_text(root, text)
             if node:
                 cx, cy = node['center']
-                await log_bus.info(f"🎯 Ditemukan '{text}' di ({cx}, {cy})")
+                if tap_right_edge:
+                    try:
+                        bounds_str = root.attrib.get('bounds', '[0,0][1080,2400]')
+                        screen_width = int(bounds_str.replace('][', ',').replace('[', '').replace(']', '').split(',')[2])
+                        cx = int(screen_width * 0.85)
+                    except:
+                        cx = cx + 300  # Fallback offset
+                await log_bus.info(f"🎯 Ditemukan '{text}' di baris {cy}, tap di ({cx}, {cy})")
                 await self.tap(devices, cx, cy)
                 return True
             await asyncio.sleep(1)

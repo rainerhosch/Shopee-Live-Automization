@@ -43,14 +43,17 @@ def build_open_shopee(profile: dict[str, Any], params: dict[str, Any], settings:
 def build_go_live(profile: dict[str, Any], params: dict[str, Any], settings: dict[str, Any]) -> list[dict[str, Any]]:
     delay = int(settings.get("step_delay_ms", 600))
     return [
-        _tap_step("home.mulai_livestream", profile, delay + 400, "Mulai Livestream"),
+        _tap_step("home.mulai_livestream", profile, delay + 400, "Mulai Livestream")
     ]
 
 
 def build_lelang(profile: dict[str, Any], params: dict[str, Any], settings: dict[str, Any]) -> list[dict[str, Any]]:
     delay = int(settings.get("step_delay_ms", 600))
-    batas = str(params.get("batas_waktu", "10dtk"))
+    batas = str(params.get("batas_waktu", "10 detik"))
     time_map = {
+        "10 detik": "lelang.time_10",
+        "30 detik": "lelang.time_30",
+        "50 detik": "lelang.time_50",
         "10dtk": "lelang.time_10",
         "30dtk": "lelang.time_30",
         "60dtk": "lelang.time_60",
@@ -60,7 +63,7 @@ def build_lelang(profile: dict[str, Any], params: dict[str, Any], settings: dict
         raise ValueError(f"Invalid batas_waktu: {batas}")
 
     steps = [
-        _tap_step("home.lelang", profile, delay + 200, "Open Lelang"),
+        _tap_step("home.lelang", profile, delay + 200, "Open Lelang")
     ]
     if params.get("judul"):
         steps.append(_tap_step("lelang.judul", profile, delay, "Focus Judul"))
@@ -141,12 +144,13 @@ def build_iklan_live(profile: dict[str, Any], params: dict[str, Any], settings: 
         raise ValueError(f"Invalid durasi_hari: {durasi_hari}")
 
     steps = [
-        _tap_step("home.iklan_live", profile, delay + 3500, "Open Iklan Live"),
+        _tap_step("home.iklan_live", profile, delay + 3500, "Open Iklan Live")
     ]
     
     fallback_steps = [
-        _tap_step("iklan.tujuan_dropdown", profile, delay + 1000, "Buka Opsi Tujuan", text_target="GMV Max"),
+        _tap_step("iklan.tujuan_dropdown", profile, delay + 1000, "Buka Opsi Tujuan", text_target="Tujuan"),
     ]
+    fallback_steps[-1]["tap_right_edge"] = True
     
     # 1. Select Main Tujuan in Popup
     if tujuan == "Tingkatkan Penonton":
@@ -219,8 +223,16 @@ def build_iklan_live(profile: dict[str, Any], params: dict[str, Any], settings: 
         })
     
     fallback_steps.append(_tap_step("iklan.modal_selanjutnya", profile, delay + 1000, "Selanjutnya (Modal)", text_target="Selanjutnya"))
-    fallback_steps.append(_tap_step("iklan.aktifkan", profile, delay + 400, "Aktifkan Iklan", text_target="Aktifkan Iklan"))
+    fallback_steps.append(_tap_step("iklan.aktifkan", profile, delay, "Aktifkan Iklan", text_target="Aktifkan Iklan"))
     
+    # 6. Optional: Konfirmasi penggantian iklan jika ada iklan lain yang sedang berjalan
+    fallback_steps.append({
+        "kind": "tap_optional",
+        "text_target": "Lanjutkan",
+        "delay_ms": delay,
+        "note": "Konfirmasi popup penggantian iklan jika ada"
+    })
+
     # Inject dynamic step
     steps.append({
         "kind": "dynamic_iklan_live",
