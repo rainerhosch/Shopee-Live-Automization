@@ -388,59 +388,6 @@ async def calibration_checklist(profile: str = "admin_live", device: str = None)
         "home.iklan_live",
         "home.lainnya",
         "home.mulai_livestream",
-        "home.produk",
-        "home.komentar",
-        "home.voucher",
-        "lelang.time_10",
-        "lelang.time_30",
-        "lelang.time_60",
-        "lelang.time_120",
-        "lelang.mulai",
-        "lelang.judul",
-        "lelang.close",
-        "iklan.tujuan_dropdown",
-        "iklan.tujuan_penonton",
-        "iklan.tujuan_gmv_max_popup",
-        "iklan.tujuan_konfirmasi",
-        "iklan.tujuan_gmv_auto",
-        "iklan.tujuan_gmv_roas",
-        "iklan.roas_custom",
-        "iklan.durasi_tak_terbatas",
-        "iklan.durasi_1",
-        "iklan.durasi_3",
-        "iklan.durasi_7",
-        "iklan.durasi_14",
-        "iklan.durasi_custom",
-        "iklan.jam_all",
-        "iklan.jam_30m",
-        "iklan.jam_1h",
-        "iklan.jam_2h",
-        "iklan.jam_4h",
-        "iklan.jam_custom",
-        "iklan.modal",
-        "iklan.modal_unlimited",
-        "iklan.modal_daily",
-        "iklan.modal_selanjutnya",
-        "iklan.aktifkan",
-        "iklan.close",
-        "lainnya.bonus_koin",
-        "lainnya.hujan_bonus",
-        "lainnya.close",
-        "bonus.bagi_250k",
-        "bonus.bagi_100k",
-        "bonus.bagi_50k",
-        "bonus.bagi_25k",
-        "bonus.claim_200",
-        "bonus.claim_100",
-        "bonus.claim_50",
-        "bonus.claim_25",
-        "bonus.mulai",
-        "bonus.close",
-        "hujan.koin_127",
-        "hujan.koin_191",
-        "hujan.koin_255",
-        "hujan.mulai",
-        "hujan.close",
     ]
     points = data.get("points") or {}
     items = []
@@ -456,21 +403,6 @@ async def calibration_checklist(profile: str = "admin_live", device: str = None)
                 "calibrated": bool(pt.get("calibrated")),
             }
         )
-    # Append any extra keys not in order
-    for key, pt in points.items():
-        if key in order:
-            continue
-        items.append(
-            {
-                "key": key,
-                "label": pt.get("label") or key,
-                "group": pt.get("group") or key.split(".")[0],
-                "x": str(pt.get("x")),
-                "y": str(pt.get("y")),
-                "calibrated": bool(pt.get("calibrated")),
-            }
-        )
-
     return {
         "profile": profile,
         "meta": {

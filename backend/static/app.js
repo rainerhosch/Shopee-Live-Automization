@@ -12,7 +12,6 @@
     refImages: {},
   };
 
-  let streamActive = false;
 
   async function api(path, options = {}) {
     const res = await fetch(path, {
@@ -98,10 +97,7 @@
   async function refreshDevices() {
     const btnRefresh = document.getElementById("btn-refresh-devices");
     const btnClearLogs = document.getElementById("btn-clear-logs");
-    const btnStreamStart = document.getElementById("btn-stream-start");
-    const btnStreamStop = document.getElementById("btn-stream-stop");
-    const streamImg = document.getElementById("live-stream-img");
-    const streamPlaceholder = document.getElementById("live-stream-placeholder");
+
     const btnCalExport = document.getElementById("btn-cal-export");
     
     const list = $("device-list");
@@ -497,39 +493,7 @@
 
   // ---- Events ----
   function bind() {
-    $("btn-scrcpy").addEventListener("click", async () => {
-      try {
-        const device = $("input-device").value.trim();
-        const url = device ? `/api/scrcpy?device=${encodeURIComponent(device)}` : `/api/scrcpy`;
-        await api(url, { method: "POST" });
-      } catch (err) {
-        alert("Failed to launch scrcpy: " + err.message);
-      }
-    });
 
-    $("btn-stream-start").addEventListener("click", () => {
-      try {
-        const device = $("input-device").value.trim();
-        const url = device ? `/api/stream?device=${encodeURIComponent(device)}` : `/api/stream`;
-        const streamImg = $("live-stream-img");
-        const streamPlaceholder = $("live-stream-placeholder");
-        streamImg.src = url;
-        streamImg.style.display = "block";
-        streamPlaceholder.style.display = "none";
-        streamActive = true;
-      } catch (err) {
-        alert("JS Error: " + err.message);
-      }
-    });
-
-    $("btn-stream-stop").addEventListener("click", () => {
-      const streamImg = $("live-stream-img");
-      const streamPlaceholder = $("live-stream-placeholder");
-      streamImg.src = "";
-      streamImg.style.display = "none";
-      streamPlaceholder.style.display = "block";
-      streamActive = false;
-    });
 
     $("task-tabs").addEventListener("click", (e) => {
       const tab = e.target.closest(".tab");

@@ -67,6 +67,7 @@ def build_lelang(profile: dict[str, Any], params: dict[str, Any], settings: dict
     ]
     if params.get("judul"):
         steps.append(_tap_step("lelang.judul", profile, delay, "Focus Judul"))
+        steps.append({"kind": "clear_text", "delay_ms": delay, "note": "Hapus teks sebelumnya"})
         steps.append({
             "kind": "input_text",
             "content": str(params["judul"]),
@@ -77,6 +78,7 @@ def build_lelang(profile: dict[str, Any], params: dict[str, Any], settings: dict
 
     if params.get("harga"):
         steps.append(_tap_step("lelang.harga", profile, delay, "Focus Harga"))
+        steps.append({"kind": "clear_text", "delay_ms": delay, "note": "Hapus teks sebelumnya"})
         steps.append({
             "kind": "input_text",
             "content": str(params["harga"]),
@@ -252,20 +254,18 @@ def build_bonus_koin(profile: dict[str, Any], params: dict[str, Any], settings: 
 
     return [
         _tap_step("home.lainnya", profile, delay + 200, "Open Lainnya"),
-        _tap_step("lainnya.bonus_koin", profile, delay + 200, "Open Bonus Koin"),
+        _tap_step("lainnya.bonus_koin", profile, delay + 200, "Open Bonus Koin", text_target="Bonus Koin"),
         _tap_step("bonus.input_dibagikan", profile, delay, "Focus Bagi"),
+        {"kind": "clear_text", "delay_ms": delay, "note": "Hapus isi sebelumnya"},
         {"kind": "input_text", "content": untuk, "delay_ms": delay, "note": f"Input Bagi {untuk}"},
         {"kind": "push", "type": 4, "delay_ms": delay, "note": "Dismiss Keyboard (BACK)"},
 
         _tap_step("bonus.input_per_klaim", profile, delay, "Focus Klaim"),
+        {"kind": "clear_text", "delay_ms": delay, "note": "Hapus isi sebelumnya"},
         {"kind": "input_text", "content": klaim, "delay_ms": delay, "note": f"Input Klaim {klaim}"},
         {"kind": "push", "type": 4, "delay_ms": delay, "note": "Dismiss Keyboard (BACK)"},
 
-        _tap_step("bonus.input_jumlah_klaim", profile, delay, "Focus Jumlah"),
-        {"kind": "input_text", "content": jumlah, "delay_ms": delay, "note": f"Input Jumlah {jumlah}"},
-        {"kind": "push", "type": 4, "delay_ms": delay, "note": "Dismiss Keyboard (BACK)"},
-        
-        _tap_step("bonus.mulai", profile, delay + 500, "Simpan Bonus Koin"),
+        _tap_step("bonus.mulai", profile, delay + 500, "Simpan Bonus Koin", text_target="Simpan"),
     ]
 
 
@@ -282,9 +282,9 @@ def build_hujan_bonus(profile: dict[str, Any], params: dict[str, Any], settings:
 
     return [
         _tap_step("home.lainnya", profile, delay + 200, "Open Lainnya"),
-        _tap_step("lainnya.hujan_bonus", profile, delay + 200, "Open Hujan Bonus"),
+        _tap_step("lainnya.hujan_bonus", profile, delay + 200, "Open Hujan Bonus", text_target="Hujan Bonus"),
         _tap_step(koin_map[koin], profile, delay, f"Koin {koin}"),
-        _tap_step("hujan.mulai", profile, delay + 300, "Mulai Hujan Bonus"),
+        _tap_step("hujan.mulai", profile, delay + 300, "Mulai Hujan Bonus", text_target="Mulai"),
     ]
 
 
