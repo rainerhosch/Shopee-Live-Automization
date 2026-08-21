@@ -28,7 +28,7 @@ class AdbClient:
         # Auto-detect localappdata if available on Windows
         localappdata = os.environ.get("LOCALAPPDATA")
         if localappdata:
-            auto_path = os.path.join(localappdata, "AndroidX", "Sdk", "platform-tools", "adb.exe")
+            auto_path = os.path.join(localappdata, "Android", "Sdk", "platform-tools", "adb.exe")
             if os.path.exists(auto_path):
                 return auto_path
 
