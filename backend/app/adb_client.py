@@ -11,24 +11,54 @@ class AdbClient:
         self.connected = False
         self._screen_sizes: dict[str, tuple[int, int]] = {}
 
-    def get_adb_path(self) -> str:
+    async def get_adb_path(self) -> str:
         settings = cfg.load_settings()
         path = settings.get("adb_path") or "adb"
         if path == "adb":
-            # Auto-detect localappdata if available on Windows
-            localappdata = os.environ.get("LOCALAPPDATA")
-            if localappdata:
-                auto_path = os.path.join(localappdata, "Android", "Sdk", "platform-tools", "adb.exe")
-                if os.path.exists(auto_path):
-                    return auto_path
+            return await self._ensure_adb_downloaded()
         return path
+
+    async def _ensure_adb_downloaded(self) -> str:
+        # Check local bin/platform-tools/adb.exe first
+        bin_dir = os.path.join(os.getcwd(), "bin")
+        local_adb = os.path.join(bin_dir, "platform-tools", "adb.exe")
+        if os.path.exists(local_adb):
+            return local_adb
+
+        # Auto-detect localappdata if available on Windows
+        localappdata = os.environ.get("LOCALAPPDATA")
+        if localappdata:
+            auto_path = os.path.join(localappdata, "Android", "Sdk", "platform-tools", "adb.exe")
+            if os.path.exists(auto_path):
+                return auto_path
+
+        from .logger import log_bus
+        import urllib.request
+        import zipfile
+        import io
+        import asyncio
+        
+        await log_bus.info("ADB tidak ditemukan. Mengunduh platform-tools dari Google...")
+        os.makedirs(bin_dir, exist_ok=True)
+        url = "https://dl.google.com/android/repository/platform-tools-latest-windows.zip"
+        
+        loop = asyncio.get_event_loop()
+        def download_and_extract():
+            with urllib.request.urlopen(url) as response:
+                with zipfile.ZipFile(io.BytesIO(response.read())) as z:
+                    z.extractall(bin_dir)
+                    
+        await loop.run_in_executor(None, download_and_extract)
+        await log_bus.info(f"ADB berhasil diunduh ke {local_adb}")
+        return local_adb
 
     async def _run_adb(self, *args: str) -> tuple[int, str, str]:
         code, stdout, stderr = await self._run_adb_bytes(*args)
         return code, stdout.decode(errors='replace').strip(), stderr.decode(errors='replace').strip()
 
     async def _run_adb_bytes(self, *args: str) -> tuple[int, bytes, bytes]:
-        cmd = [self.get_adb_path(), *args]
+        adb_path = await self.get_adb_path()
+        cmd = [adb_path, *args]
         
         kwargs = {}
         if os.name == 'nt':
@@ -44,16 +74,100 @@ class AdbClient:
         return proc.returncode or 0, stdout, stderr
 
     async def connect(self) -> None:
+        adb_path = await self.get_adb_path()
         code, out, err = await self._run_adb("start-server")
         if code != 0:
             raise RuntimeError(f"Failed to start ADB server: {err}")
         self.connected = True
-        await log_bus.info(f"\nADB connected using {self.get_adb_path()}")
+        await log_bus.info(f"\nADB connected using {adb_path}")
 
     async def close(self) -> None:
         self.connected = False
         # Do not kill adb server as other apps might use it
         self._screen_sizes.clear()
+
+    async def screencap(self) -> bytes:
+        from .vision import get_screen_bytes
+        bytes_data = await get_screen_bytes(self)
+        if not bytes_data:
+            raise RuntimeError("Failed to get screencap")
+        return bytes_data
+
+    async def tap_text(self, devices: str, text: str, timeout: int = 5, tap_right_edge: bool = False) -> bool:
+        """
+        Mencari teks di layar (menggunakan UI Automator) dan melakukan tap jika ditemukan.
+        """
+        from .vision import dump_ui, find_node_by_text
+        from .logger import log_bus
+        import time
+        
+        await log_bus.info(f"🔍 Mencari tombol '{text}' di layar...")
+        start = time.time()
+        while time.time() - start < timeout:
+            root = await dump_ui(self, devices)
+            node = find_node_by_text(root, text)
+            if node:
+                cx, cy = node['center']
+                if tap_right_edge:
+                    try:
+                        bounds_str = root.attrib.get('bounds', '[0,0][1080,2400]')
+                        screen_width = int(bounds_str.replace('][', ',').replace('[', '').replace(']', '').split(',')[2])
+                        cx = int(screen_width * 0.85)
+                    except:
+                        cx = cx + 300  # Fallback offset
+                await log_bus.info(f"🎯 Ditemukan '{text}' di baris {cy}, tap di ({cx}, {cy})")
+                await self.tap(devices, cx, cy)
+                return True
+            await asyncio.sleep(1)
+            
+        await log_bus.error(f"❌ Teks '{text}' tidak ditemukan setelah {timeout} detik.")
+        return False
+
+    async def read_text_by_regex(self, devices: str, pattern: str, timeout: int = 5) -> dict | None:
+        """
+        Mencari node berdasarkan regex dan mengembalikan data node (termasuk text dan center).
+        """
+        from .vision import dump_ui, find_node_by_regex
+        from .logger import log_bus
+        import time
+        
+        await log_bus.info(f"🔍 Mencari pola regex '{pattern}' di layar...")
+        start = time.time()
+        while time.time() - start < timeout:
+            root = await dump_ui(self, devices)
+            node = find_node_by_regex(root, pattern)
+            if node:
+                await log_bus.info(f"🎯 Ditemukan cocok dengan regex '{pattern}': '{node['text']}'")
+                return node
+            await asyncio.sleep(1)
+            
+        await log_bus.error(f"❌ Pola regex '{pattern}' tidak ditemukan setelah {timeout} detik.")
+        return None
+        
+    async def read_all_text_by_regex(self, devices: str, pattern: str, timeout: int = 5) -> list[dict]:
+        from .vision import dump_ui, find_all_nodes_by_regex
+        await log_bus.info(f"🔍 Mencari semua pola regex '{pattern}' di layar...")
+        end_time = asyncio.get_event_loop().time() + timeout
+        
+        while asyncio.get_event_loop().time() < end_time:
+            root = await dump_ui(self, devices)
+            nodes = find_all_nodes_by_regex(root, pattern)
+            if nodes:
+                await log_bus.info(f"🎯 Ditemukan {len(nodes)} node cocok dengan regex '{pattern}'")
+                return nodes
+            await asyncio.sleep(1)
+            
+        await log_bus.error(f"❌ Pola regex '{pattern}' tidak ditemukan setelah {timeout} detik.")
+        return []
+
+    async def check_text_exists(self, devices: str, text: str) -> bool:
+        """
+        Mengecek apakah suatu teks ada di layar tanpa melakukan tap (single check).
+        """
+        from .vision import dump_ui, find_node_by_text
+        root = await dump_ui(self, devices)
+        return find_node_by_text(root, text) is not None
+
 
     async def ensure(self) -> None:
         if not self.connected:
@@ -69,7 +183,25 @@ class AdbClient:
         for line in out.splitlines()[1:]:
             parts = line.split()
             if len(parts) >= 2 and parts[1] == "device":
-                devices.append({"serial": parts[0], "status": "device"})
+                serial = parts[0]
+                mcode, mout, _ = await self._run_adb("-s", serial, "shell", "getprop ro.product.brand; getprop ro.product.model; getprop ro.product.manufacturer")
+                
+                brand, model, manufacturer = "Unknown", "Unknown", "Unknown"
+                if mcode == 0:
+                    lines = [l.strip() for l in mout.strip().split('\n')]
+                    # Filter out any "Profil dijalankan dalam..." logs from adb output
+                    lines = [l for l in lines if not l.startswith("Profil")]
+                    if len(lines) > 0: brand = lines[0]
+                    if len(lines) > 1: model = lines[1]
+                    if len(lines) > 2: manufacturer = lines[2]
+                    
+                devices.append({
+                    "serial": serial, 
+                    "status": "device", 
+                    "brand": brand,
+                    "model": model,
+                    "manufacturer": manufacturer
+                })
         return {"code": 10000, "message": "OK", "data": devices}
 
     async def _get_screen_size(self, device: str) -> tuple[int, int]:
@@ -161,9 +293,12 @@ class AdbClient:
             return {"code": 10001, "message": err, "data": None}
         return {"code": 10000, "message": "OK", "data": data}
 
-    async def screenshot_raw(self, device: str) -> bytes:
+    async def screenshot_raw(self, device: str = None) -> bytes:
         await self.ensure()
-        code, stdout, stderr = await self._run_adb_bytes("-s", device, "exec-out", "screencap", "-p")
+        args = ["exec-out", "screencap", "-p"]
+        if device:
+            args = ["-s", device] + args
+        code, stdout, stderr = await self._run_adb_bytes(*args)
         if code != 0:
             raise RuntimeError(f"screencap failed: {stderr.decode(errors='replace')}")
         return stdout

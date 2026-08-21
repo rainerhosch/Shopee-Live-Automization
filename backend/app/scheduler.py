@@ -13,9 +13,9 @@ from .device_manager import device_manager
 
 
 class BotScheduler:
-    def __init__(self) -> None:
+    def __init__(self, device: str) -> None:
         self.status: str = "stopped"  # stopped | running | paused
-        self.device: str = ""
+        self.device: str = device
         self.profile_name: str = "admin_live"
         self.dry_run: bool = True
         self.tasks: dict[str, dict[str, Any]] = {}
@@ -43,8 +43,6 @@ class BotScheduler:
 
     def reload_settings(self) -> dict[str, Any]:
         self._settings = cfg.load_settings()
-        if not self.device and self._settings.get("default_device"):
-            self.device = self._settings["default_device"]
         if self._settings.get("default_profile"):
             self.profile_name = self._settings["default_profile"]
         if "dry_run" in self._settings:
@@ -244,13 +242,38 @@ class BotScheduler:
         )
 
         async with self._device_lock:
+            # 0. Dismiss Tips popup if exists
+            if not dry:
+                try:
+                    is_tips = await device_manager.check_text_exists(self.device, "Tips")
+                    if is_tips:
+                        await log_bus.info("Popup 'Tips' terdeteksi, menekan tombol OK...")
+                        await device_manager.tap_text(self.device, "OK", timeout=2)
+                        await asyncio.sleep(1) # wait for popup to close
+                except Exception as e:
+                    await log_bus.error(f"Error checking Tips popup: {e}")
+
             results: list[dict[str, Any]] = []
-            for step in steps:
+            i = 0
+            while i < len(steps):
+                step = steps[i]
+                step["is_manual"] = task.get("manual", False)
                 result = await self._run_step(step, dry=dry, settle=settle)
                 results.append(result)
+
+                if not result.get("ok", True):
+                    error_msg = result.get("error", "Unknown error")
+                    await log_bus.error(f"Task aborted because step failed: {error_msg}")
+                    raise RuntimeError(f"Step '{step.get('note', step['kind'])}' failed")
+                
+                # Dynamic step injection
+                if result.get("new_steps"):
+                    steps = steps[:i+1] + result["new_steps"] + steps[i+1:]
+                
                 delay = int(step.get("delay_ms") or 0)
                 if delay > 0:
                     await asyncio.sleep(delay / 1000)
+                i += 1
             return results
 
     async def _run_step(self, step: dict[str, Any], *, dry: bool, settle: int) -> dict[str, Any]:
@@ -261,14 +284,146 @@ class BotScheduler:
         if kind == "wait":
             return {"ok": True, "step": step}
 
+        if kind == "dynamic_iklan_live":
+            is_manual = step.get("is_manual", False)
+            
+            # Cek apakah ada tombol 'Lihat Semua Iklan' atau '+ Buat Iklan Baru' yang menandakan iklan sedang berjalan
+            is_active = False
+            if not dry:
+                is_active = await device_manager.check_text_exists(self.device, "Lihat Semua Iklan")
+                if not is_active:
+                    is_active = await device_manager.check_text_exists(self.device, "Buat Iklan Baru")
+            
+            new_steps = []
+            if is_active and not is_manual:
+                await log_bus.info("Iklan aktif terdeteksi (Otomatis). Menjalankan alur Top Up Modal.")
+                node = None
+                if not dry:
+                    # 1. Cari label 'Modal'
+                    from .vision import dump_ui, find_all_nodes_by_regex
+                    root = await dump_ui(device_manager.client, self.device)
+                    modal_labels = find_all_nodes_by_regex(root, r"Modal")
+                    if modal_labels:
+                        # Ambil label Modal yang paling bawah (menghindari header jika ada)
+                        modal_label = sorted(modal_labels, key=lambda n: n["center"][1], reverse=True)[0]
+                        modal_y = modal_label["center"][1]
+                        
+                        # 2. Cari nilai 'Rp' yang berada pada baris yang sama (Y yang berdekatan)
+                        rp_nodes = find_all_nodes_by_regex(root, r"Rp\s*[\d\.]+")
+                        if rp_nodes:
+                            # Cari node Rp dengan selisih Y terkecil dari label Modal
+                            node = min(rp_nodes, key=lambda n: abs(n["center"][1] - modal_y))
+                            
+                            # Validasi apakah berada di baris yang sama (toleransi misal 50 pixel)
+                            if abs(node["center"][1] - modal_y) > 100:
+                                await log_bus.error(f"Node Rp terdekat terlalu jauh dari label Modal (selisih {abs(node['center'][1] - modal_y)}px)")
+                                node = None
+                    else:
+                        await log_bus.error("Label 'Modal' tidak ditemukan di layar.")
+                
+                if node:
+                    import re
+                    # Hapus semua karakter non-digit untuk mendapatkan integer
+                    old_modal_str = re.sub(r"[^\d]", "", node["text"])
+                    old_modal = int(old_modal_str) if old_modal_str else 0
+                    penambahan = int(step.get("penambahan_modal", 5000))
+                    new_modal = old_modal + penambahan
+                    await log_bus.info(f"Modal saat ini: {old_modal}, akan ditambah menjadi: {new_modal}")
+                    
+                    # 1. Tap nominal modal saat ini untuk buka popup
+                    cx, cy = node["center"]
+                    new_steps.append({
+                        "kind": "tap",
+                        "x": cx,
+                        "y": cy,
+                        "delay_ms": 1500,
+                        "note": "Buka Opsi Modal (Top Up)"
+                    })
+                    # 2. Pilih Atur Modal Harian (jika tidak terpilih)
+                    new_steps.append({
+                        "kind": "tap",
+                        "x": 0,
+                        "y": 0,
+                        "text_target": "Atur Modal Harian",
+                        "delay_ms": 800,
+                        "note": "Pilih Atur Modal Harian (Top Up)"
+                    })
+                    # 3. Hapus teks sebelumnya
+                    new_steps.append({
+                        "kind": "clear_text",
+                        "delay_ms": 500,
+                        "note": "Hapus nominal lama"
+                    })
+                    # 4. Ketik nominal baru
+                    new_steps.append({
+                        "kind": "input_text",
+                        "content": str(new_modal),
+                        "delay_ms": 1000,
+                        "note": f"Type Modal {new_modal} (Top Up)"
+                    })
+                    # 5. Klik Selanjutnya
+                    new_steps.append({
+                        "kind": "tap",
+                        "x": 0,
+                        "y": 0,
+                        "text_target": "Selanjutnya",
+                        "delay_ms": 1000,
+                        "note": "Selanjutnya (Modal Top Up)"
+                    })
+                    # 6. Tutup popup Iklan Aktif
+                    new_steps.append({
+                        "kind": "push",
+                        "type": "4",
+                        "delay_ms": 1000,
+                        "note": "Tutup popup Iklan Aktif"
+                    })
+                else:
+                    await log_bus.error("Gagal membaca nominal modal saat ini.")
+            else:
+                await log_bus.info("Mode Buat Iklan Baru aktif.")
+                if is_active:
+                    await log_bus.info("Iklan sudah berjalan, menekan '+ Buat Iklan Baru' terlebih dahulu.")
+                    new_steps.append({
+                        "kind": "tap",
+                        "x": 0,
+                        "y": 0,
+                        "text_target": "Buat Iklan Baru",
+                        "delay_ms": 4000,
+                        "note": "Klik + Buat Iklan Baru"
+                    })
+                # Cek dan tutup alert "Akan Diprioritaskan" jika ada
+                new_steps.append({
+                    "kind": "close_alert_if_exists",
+                    "text_target": "Akan Diprioritaskan",
+                    "delay_ms": 1000,
+                    "note": "Tutup alert jika ada"
+                })
+                # Inject all original 'Buat Baru' steps that were passed in 'fallback_steps'
+                new_steps.extend(step.get("fallback_steps", []))
+            
+            return {"ok": True, "step": step, "new_steps": new_steps}
+
         if kind == "tap":
-            resp = await device_manager.tap(
-                self.device,
-                step["x"],
-                step["y"],
-                settle_ms=settle,
-                dry_run=dry,
-            )
+            text_target = step.get("text_target")
+            resp = None
+            
+            # 1. Try finding by text (UI Automator) first
+            if text_target and not dry:
+                if hasattr(device_manager, "tap_text"):
+                    tap_right = step.get("tap_right_edge", False)
+                    success = await device_manager.tap_text(self.device, text_target, timeout=5, tap_right_edge=tap_right)
+                    if success:
+                        resp = {"code": 10000, "message": f"Text matched: {text_target}"}
+            
+            # 2. Fallback to coordinate tap
+            if not resp:
+                resp = await device_manager.tap(
+                    self.device,
+                    step["x"],
+                    step["y"],
+                    settle_ms=settle,
+                    dry_run=dry,
+                )
             return {"ok": resp.get("code") == 10000, "step": step, "response": resp}
 
         if kind == "swipe":
@@ -294,6 +449,49 @@ class BotScheduler:
         if kind == "input_text":
             resp = await device_manager.input_text(self.device, step["content"], dry_run=dry)
             return {"ok": resp.get("code") == 10000, "step": step, "response": resp}
+
+        if kind == "clear_text":
+            if not dry:
+                # Move cursor to end (KEYCODE_MOVE_END = 123)
+                await device_manager.push_event(self.device, "123", dry_run=dry)
+                await asyncio.sleep(0.2)
+                # Spam backspace 15 times (KEYCODE_DEL = 67)
+                for _ in range(15):
+                    await device_manager.push_event(self.device, "67", dry_run=dry)
+            return {"ok": True, "step": step}
+
+        if kind == "close_alert_if_exists":
+            text_target = step.get("text_target", "")
+            if not dry and text_target:
+                has_alert = await device_manager.check_text_exists(self.device, text_target)
+                if has_alert:
+                    await log_bus.info(f"Alert '{text_target}' terdeteksi, menutup alert...")
+                    await device_manager.tap_text(self.device, text_target, tap_right_edge=True)
+                    await asyncio.sleep(1)
+            return {"ok": True, "step": step}
+
+        if kind == "tap_optional":
+            text_target = step.get("text_target", "")
+            if not dry and text_target:
+                has_text = await device_manager.check_text_exists(self.device, text_target)
+                if has_text:
+                    await log_bus.info(f"Tombol opsional '{text_target}' terdeteksi, menekan tombol...")
+                    await device_manager.tap_text(self.device, text_target)
+                    await asyncio.sleep(1)
+            return {"ok": True, "step": step}
+
+        if kind == "tap_image":
+            template_path = step.get("template_path", "")
+            threshold = step.get("threshold", 0.8)
+            if not dry and template_path:
+                await log_bus.info(f"🔍 Mencari gambar '{template_path}' di layar...")
+                success = await device_manager.tap_image(self.device, template_path, threshold)
+                if not success:
+                    await log_bus.error(f"❌ Gambar '{template_path}' tidak ditemukan.")
+                    # Let it continue or fail based on behavior? For now, we return error if not found.
+                    # If you want it to not fail the whole task, you can return {"ok": True} but typically we want it to fail if a mandatory button is missing.
+                    return {"ok": False, "error": f"Template {template_path} not found"}
+            return {"ok": True, "step": step}
 
         raise ValueError(f"Unknown step kind: {kind}")
 
@@ -324,4 +522,18 @@ class BotScheduler:
         return []
 
 
-bot = BotScheduler()
+class BotManager:
+    def __init__(self):
+        self.bots: dict[str, BotScheduler] = {}
+
+    def get_bot(self, device: str) -> BotScheduler:
+        if not device:
+            # Fallback to default device setting if none provided
+            settings = cfg.load_settings()
+            device = settings.get("default_device", "default")
+        if device not in self.bots:
+            self.bots[device] = BotScheduler(device)
+            self.bots[device].reload_settings()
+        return self.bots[device]
+
+bot_manager = BotManager()

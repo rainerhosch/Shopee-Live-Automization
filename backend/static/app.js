@@ -12,6 +12,14 @@
     refImages: {},
   };
 
+
+  function updateDeviceHeaders() {
+    const devLabel = $("input-device").value ? `(${$("input-device").value})` : "";
+    if ($("header-dev-1")) $("header-dev-1").textContent = devLabel;
+    if ($("header-dev-2")) $("header-dev-2").textContent = devLabel;
+    if ($("header-dev-3")) $("header-dev-3").textContent = devLabel;
+  }
+
   async function api(path, options = {}) {
     const res = await fetch(path, {
       headers: { "Content-Type": "application/json", ...(options.headers || {}) },
@@ -94,6 +102,11 @@
   }
 
   async function refreshDevices() {
+    const btnRefresh = document.getElementById("btn-refresh-devices");
+    const btnClearLogs = document.getElementById("btn-clear-logs");
+
+    const btnCalExport = document.getElementById("btn-cal-export");
+    
     const list = $("device-list");
     try {
       const data = await api("/api/devices");
@@ -114,12 +127,16 @@
         const serial = d.serial || d.onlySerial || "";
         const btn = document.createElement("button");
         btn.className = "device-item" + (serial === $("input-device").value ? " active" : "");
-        btn.innerHTML = `<strong>${escapeHtml(d.name || d.model || serial)}</strong>
-          <span>${escapeHtml(serial)} · ${d.sourceWidth || "?"}x${d.sourceHeight || "?"} · ${d.status || ""}</span>`;
+        const devName = d.name || (d.brand && d.brand !== "Unknown" ? `${d.brand} ${d.model}` : d.model) || serial;
+        const devMfg = d.manufacturer && d.manufacturer !== "Unknown" ? `${d.manufacturer} · ` : "";
+        btn.innerHTML = `<strong>${escapeHtml(devName)}</strong>
+          <span>${escapeHtml(serial)} · ${escapeHtml(devMfg)}${d.sourceWidth || "?"}x${d.sourceHeight || "?"} · ${d.status || ""}</span>`;
         btn.onclick = () => {
           $("input-device").value = serial;
           [...list.children].forEach((c) => c.classList.remove("active"));
           btn.classList.add("active");
+          refreshBot();
+          updateDeviceHeaders();
         };
         list.appendChild(btn);
       });
@@ -130,7 +147,8 @@
   }
 
   async function refreshBot() {
-    state.bot = await api("/api/bot");
+    const dev = encodeURIComponent($("input-device").value.trim());
+    state.bot = await api(`/api/bot?device=${dev}`);
     updateBadges();
     $("bot-summary").textContent = `Status: ${state.bot.status} · device: ${state.bot.device || "-"
       } · profile: ${state.bot.profile} · dry_run: ${state.bot.dry_run}`;
@@ -195,7 +213,8 @@
     
     el.querySelectorAll("[data-del-q]").forEach((btn) => {
       btn.onclick = async () => {
-        await api(`/api/queue/${btn.dataset.delQ}`, { method: "DELETE" });
+        const dev = encodeURIComponent($("input-device").value.trim());
+        await api(`/api/queue/${btn.dataset.delQ}?device=${dev}`, { method: "DELETE" });
         refreshBot();
       };
     });
@@ -231,7 +250,8 @@
     
     el.querySelectorAll("[data-del]").forEach((btn) => {
       btn.onclick = async () => {
-        await api(`/api/tasks/${btn.dataset.del}`, { method: "DELETE" });
+        const dev = encodeURIComponent($("input-device").value.trim());
+        await api(`/api/tasks/${btn.dataset.del}?device=${dev}`, { method: "DELETE" });
         refreshBot();
       };
     });
@@ -266,7 +286,7 @@
         else if (act === "pause") patch = { enabled: false };
         else if (act === "stop") patch = { enabled: false, run_count: 0 };
         
-        await api(`/api/tasks/${id}`, {
+        await api(`/api/tasks/${id}?device=${encodeURIComponent($("input-device").value.trim())}`, {
           method: "PATCH",
           body: JSON.stringify(patch),
         });
@@ -298,11 +318,13 @@
         interval_sec: num($("iklan-interval").value, 600),
         params: {
           tujuan: $("iklan-tujuan").value,
+          roas: $("iklan-roas").value,
+          roas_custom: $("iklan-roas-custom").value,
           durasi_hari: $("iklan-durasi-hari").value,
           durasi_jam: $("iklan-durasi-jam").value,
-          modal: num($("iklan-modal").value, 10000),
-          kelipatan_modal: num($("iklan-kelipatan-modal").value, null),
-          max_modal: num($("iklan-max-modal").value, null),
+          tipe_modal: $("iklan-tipe-modal").value,
+          modal_harian: num($("iklan-modal-harian").value, 10000),
+          penambahan_modal: num($("iklan-penambahan-modal").value, 5000),
         },
       };
     }
@@ -313,7 +335,6 @@
         params: {
           untuk_dibagikan: num($("bonus-bagi").value, 100000),
           koin_per_klaim: num($("bonus-claim").value, 100),
-          jumlah_klaim: num($("bonus-jumlah").value, 1000),
         },
       };
     }
@@ -485,6 +506,8 @@
 
   // ---- Events ----
   function bind() {
+
+
     $("task-tabs").addEventListener("click", (e) => {
       const tab = e.target.closest(".tab");
       if (!tab) return;
@@ -555,7 +578,8 @@
       // strip null judul
       if (payload.params && payload.params.judul === null) delete payload.params.judul;
       try {
-        await api("/api/tasks", { method: "POST", body: JSON.stringify({ ...payload, enabled: true }) });
+        const dev = encodeURIComponent($("input-device").value.trim());
+        await api(`/api/tasks?device=${dev}`, { method: "POST", body: JSON.stringify({ ...payload, enabled: true }) });
         refreshBot();
       } catch (err) {
         alert(err.message);
@@ -583,13 +607,15 @@
 
     $("btn-clear-tasks").onclick = async () => {
       if (!confirm("Clear all scheduled tasks?")) return;
-      await api("/api/tasks", { method: "DELETE" });
+      const dev = encodeURIComponent($("input-device").value.trim());
+      await api(`/api/tasks?device=${dev}`, { method: "DELETE" });
       refreshBot();
     };
 
     $("btn-clear-queue").onclick = async () => {
       if (!confirm("Clear execution queue?")) return;
-      await api("/api/queue", { method: "DELETE" });
+      const dev = encodeURIComponent($("input-device").value.trim());
+      await api(`/api/queue?device=${dev}`, { method: "DELETE" });
       refreshBot();
     };
 
@@ -678,4 +704,125 @@
     console.error(err);
     appendLog({ level: "error", message: String(err), ts: new Date().toISOString() });
   });
+
+  // SIDEBAR ROUTING LOGIC
+  document.querySelectorAll(".nav-item[data-view]").forEach(btn => {
+    btn.onclick = () => {
+      // Update active nav
+      document.querySelectorAll(".nav-item[data-view]").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      
+      // Hide all views
+      document.querySelectorAll(".view-panel").forEach(v => v.classList.add("hidden"));
+      
+      // Show selected view
+      const viewId = "view-" + btn.dataset.view;
+      const viewEl = document.getElementById(viewId);
+      if (viewEl) viewEl.classList.remove("hidden");
+      
+      // Stop or Start monitoring loop
+      if (btn.dataset.view === "monitor") {
+        startMonitorLoop();
+      } else {
+        stopMonitorLoop();
+      }
+    };
+  });
+
+  // MONITORING LOGIC
+  let monitorInterval = null;
+  
+  async function refreshMonitor() {
+    try {
+      const bots = await api("/api/bots");
+      const grid = document.getElementById("monitor-grid");
+      grid.innerHTML = "";
+      
+      const devices = state.devices || [];
+      
+      if (Object.keys(bots).length === 0 && devices.length === 0) {
+        grid.innerHTML = "<div class='muted'>No devices connected.</div>";
+        return;
+      }
+      
+      // Merge known devices and bot states
+      const allSerials = new Set([...devices.map(d => d.serial), ...Object.keys(bots)]);
+      
+      allSerials.forEach(serial => {
+        const d = devices.find(x => x.serial === serial) || {};
+        const b = bots[serial] || { status: "offline", queue_length: 0, active_task: null };
+        
+        const devName = d.name || (d.brand && d.brand !== "Unknown" ? `${d.brand} ${d.model}` : d.model) || serial;
+        
+        const card = document.createElement("div");
+        card.className = "monitor-card";
+        
+        const isRunning = b.status === "running";
+        const statusColor = isRunning ? "var(--ok)" : b.status === "paused" ? "var(--warn)" : "var(--fg)";
+        
+        card.innerHTML = `
+          <header>
+            <span class="device-title">${escapeHtml(devName)}</span>
+            <span style="color: ${statusColor}; font-weight: bold;">${b.status.toUpperCase()}</span>
+          </header>
+          <div class="status-row">
+            <span>Active Task:</span>
+            <span class="task-active">${b.active_task ? escapeHtml(b.active_task.type) : "None"}</span>
+          </div>
+          <div class="queue-info">Queue: ${b.queue_length} tasks</div>
+        `;
+        
+        // Clicking a card navigates to config view and selects the device
+        card.onclick = () => {
+          // Select this device
+          $("input-device").value = serial;
+          updateDeviceHeaders();
+          
+          // Switch to config view
+          document.querySelector('.nav-item[data-view="config"]').click();
+          
+          // Trigger device select visual update
+          document.querySelectorAll('.device-item').forEach(c => {
+             c.classList.remove('active');
+             if (c.textContent.includes(serial)) c.classList.add('active');
+          });
+          refreshBot();
+          refreshTasks();
+        };
+        
+        grid.appendChild(card);
+      });
+      
+    } catch (err) {
+      console.error("Monitor refresh failed", err);
+    }
+  }
+  
+  function startMonitorLoop() {
+    refreshMonitor();
+    if (!monitorInterval) {
+      monitorInterval = setInterval(refreshMonitor, 2000);
+    }
+  }
+  
+  function stopMonitorLoop() {
+    if (monitorInterval) {
+      clearInterval(monitorInterval);
+      monitorInterval = null;
+    }
+  }
+
+  // Init monitor if active tab is monitor
+  if (document.querySelector('.nav-item.active').dataset.view === "monitor") {
+    startMonitorLoop();
+  }
+
 })();
+
+  // SIDEBAR TOGGLE
+  const btnToggle = document.getElementById('btn-toggle-sidebar');
+  if (btnToggle) {
+    btnToggle.onclick = () => {
+      document.getElementById('app-sidebar').classList.toggle('collapsed');
+    };
+  }
