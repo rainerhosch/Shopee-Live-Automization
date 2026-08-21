@@ -203,7 +203,7 @@
             </div>
             <div class="field" id="iklan-modal-harian-field" style="display: none;">
               <label>Modal Harian (Buat Baru)</label>
-              <input id="iklan-modal-harian" type="number" value="10000" />
+              <input id="iklan-modal-harian" type="number" value="60000" />
             </div>
             <div class="field" id="iklan-penambahan-modal-field" style="display: none;">
               <label>Penambahan Modal (Top Up)</label>
@@ -215,19 +215,19 @@
               const tujuan = document.getElementById("iklan-tujuan").value;
               const roasRow = document.getElementById("iklan-roas-row");
               const jamField = document.getElementById("iklan-durasi-jam-field");
-              
+
               if (tujuan === "GMV (Max ROAS)") {
                 roasRow.style.display = "grid";
               } else {
                 roasRow.style.display = "none";
               }
-              
+
               if (tujuan === "Tingkatkan Penonton") {
                 jamField.style.display = "block";
               } else {
                 jamField.style.display = "none";
               }
-              
+
               const roas = document.getElementById("iklan-roas").value;
               const roasCustom = document.getElementById("iklan-roas-custom-field");
               if (tujuan === "GMV (Max ROAS)" && roas === "Masukan Target") {
@@ -235,7 +235,7 @@
               } else {
                 roasCustom.style.display = "none";
               }
-              
+
               const modalTipe = document.getElementById("iklan-tipe-modal").value;
               const modalHarian = document.getElementById("iklan-modal-harian-field");
               const penambahanModal = document.getElementById("iklan-penambahan-modal-field");
@@ -261,11 +261,11 @@
           <div class="field-row">
             <div class="field">
               <label>Untuk dibagikan</label>
-              <input type="number" id="bonus-bagi" value="100000" />
+              <input type="number" id="bonus-bagi" value="25000" />
             </div>
             <div class="field">
               <label>Koin per klaim</label>
-              <input type="number" id="bonus-claim" value="100" />
+              <input type="number" id="bonus-claim" value="1000" />
             </div>
           </div>
           <div class="field-row">
@@ -280,11 +280,7 @@
           <div class="field-row">
             <div class="field">
               <label>Koin untuk dibagikan</label>
-              <select id="hujan-koin">
-                <option value="127">127</option>
-                <option value="191">191</option>
-                <option value="255" selected>255</option>
-              </select>
+              <input type="number" id="hujan-koin" value="255" />
             </div>
             <div class="field">
               <label>Interval (detik)</label>
@@ -424,7 +420,7 @@
     </div>
   </main>
 
-  <script src="/static/app.js?v=6"></script>
+  <script src="/static/app.js?v=8"></script>
 </body>
 
 </html>

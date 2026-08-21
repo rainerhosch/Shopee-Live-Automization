@@ -120,8 +120,10 @@
         const serial = d.serial || d.onlySerial || "";
         const btn = document.createElement("button");
         btn.className = "device-item" + (serial === $("input-device").value ? " active" : "");
-        btn.innerHTML = `<strong>${escapeHtml(d.name || d.model || serial)}</strong>
-          <span>${escapeHtml(serial)} · ${d.sourceWidth || "?"}x${d.sourceHeight || "?"} · ${d.status || ""}</span>`;
+        const devName = d.name || (d.brand && d.brand !== "Unknown" ? `${d.brand} ${d.model}` : d.model) || serial;
+        const devMfg = d.manufacturer && d.manufacturer !== "Unknown" ? `${d.manufacturer} · ` : "";
+        btn.innerHTML = `<strong>${escapeHtml(devName)}</strong>
+          <span>${escapeHtml(serial)} · ${escapeHtml(devMfg)}${d.sourceWidth || "?"}x${d.sourceHeight || "?"} · ${d.status || ""}</span>`;
         btn.onclick = () => {
           $("input-device").value = serial;
           [...list.children].forEach((c) => c.classList.remove("active"));
@@ -321,7 +323,6 @@
         params: {
           untuk_dibagikan: num($("bonus-bagi").value, 100000),
           koin_per_klaim: num($("bonus-claim").value, 100),
-          jumlah_klaim: num($("bonus-jumlah").value, 1000),
         },
       };
     }

@@ -265,26 +265,25 @@ def build_bonus_koin(profile: dict[str, Any], params: dict[str, Any], settings: 
         {"kind": "input_text", "content": klaim, "delay_ms": delay, "note": f"Input Klaim {klaim}"},
         {"kind": "push", "type": 4, "delay_ms": delay, "note": "Dismiss Keyboard (BACK)"},
 
-        _tap_step("bonus.mulai", profile, delay + 500, "Simpan Bonus Koin", text_target="Simpan"),
+        _tap_step("bonus.mulai", profile, delay + 500, "Simpan Bonus Koin", text_target="Mulai"),
     ]
 
 
 def build_hujan_bonus(profile: dict[str, Any], params: dict[str, Any], settings: dict[str, Any]) -> list[dict[str, Any]]:
     delay = int(settings.get("step_delay_ms", 600))
-    koin = int(params.get("koin_dibagikan", 255))
-    koin_map = {
-        127: "hujan.koin_127",
-        191: "hujan.koin_191",
-        255: "hujan.koin_255",
-    }
-    if koin not in koin_map:
-        raise ValueError(f"Invalid koin_dibagikan: {koin}")
+    koin = str(params.get("koin_dibagikan", "255"))
 
     return [
         _tap_step("home.lainnya", profile, delay + 200, "Open Lainnya"),
         _tap_step("lainnya.hujan_bonus", profile, delay + 200, "Open Hujan Bonus", text_target="Hujan Bonus"),
-        _tap_step(koin_map[koin], profile, delay, f"Koin {koin}"),
+        
+        _tap_step("hujan.input_koin", profile, delay, "Focus Koin Hujan", text_target="Atur Sekarang"),
+        {"kind": "clear_text", "delay_ms": delay, "note": "Hapus isi sebelumnya"},
+        {"kind": "input_text", "content": koin, "delay_ms": delay, "note": f"Input Koin {koin}"},
+        {"kind": "push", "type": 4, "delay_ms": delay, "note": "Dismiss Keyboard (BACK)"},
+        
         _tap_step("hujan.mulai", profile, delay + 300, "Mulai Hujan Bonus", text_target="Mulai"),
+        _tap_step("hujan.konfirmasi", profile, delay + 500, "Konfirmasi Hujan Bonus", text_target="Ya"),
     ]
 
 

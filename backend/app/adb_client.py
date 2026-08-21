@@ -152,7 +152,25 @@ class AdbClient:
         for line in out.splitlines()[1:]:
             parts = line.split()
             if len(parts) >= 2 and parts[1] == "device":
-                devices.append({"serial": parts[0], "status": "device"})
+                serial = parts[0]
+                mcode, mout, _ = await self._run_adb("-s", serial, "shell", "getprop ro.product.brand; getprop ro.product.model; getprop ro.product.manufacturer")
+                
+                brand, model, manufacturer = "Unknown", "Unknown", "Unknown"
+                if mcode == 0:
+                    lines = [l.strip() for l in mout.strip().split('\n')]
+                    # Filter out any "Profil dijalankan dalam..." logs from adb output
+                    lines = [l for l in lines if not l.startswith("Profil")]
+                    if len(lines) > 0: brand = lines[0]
+                    if len(lines) > 1: model = lines[1]
+                    if len(lines) > 2: manufacturer = lines[2]
+                    
+                devices.append({
+                    "serial": serial, 
+                    "status": "device", 
+                    "brand": brand,
+                    "model": model,
+                    "manufacturer": manufacturer
+                })
         return {"code": 10000, "message": "OK", "data": devices}
 
     async def _get_screen_size(self, device: str) -> tuple[int, int]:

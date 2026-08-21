@@ -205,6 +205,7 @@ def find_node_by_text(root: ET.Element, text: str) -> Optional[dict]:
         return None
     
     target = text.lower()
+    best_match = None
     # BFS traversal
     queue = [root]
     while queue:
@@ -218,16 +219,23 @@ def find_node_by_text(root: ET.Element, text: str) -> Optional[dict]:
                 # Format: [x1,y1][x2,y2]
                 bounds_str = bounds_str.replace('][', ',').replace('[', '').replace(']', '')
                 x1, y1, x2, y2 = map(int, bounds_str.split(','))
-                return {
+                match_data = {
                     "text": node.attrib.get('text', ''),
                     "desc": node.attrib.get('content-desc', ''),
                     "bounds": (x1, y1, x2, y2),
                     "center": (x1 + (x2 - x1) // 2, y1 + (y2 - y1) // 2)
                 }
+                # Prefer exact match
+                if target == node_text or target == node_desc:
+                    return match_data
+                # Save first partial match as fallback
+                if not best_match:
+                    best_match = match_data
+                    
         for child in node:
             queue.append(child)
             
-    return None
+    return best_match
 
 def find_all_nodes_by_regex(root: ET.Element, pattern: str) -> list[dict]:
     """
