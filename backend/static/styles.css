@@ -681,8 +681,8 @@ body {
   align-items: center;
   margin-bottom: 0.75rem;
 }
-.dc-title { margin:0; font-size: 0.95rem; color:#f8fafc; }
-.dc-subtitle { font-size: 0.7rem; color: #64748b; margin-top: 0.1rem; }
+.dc-title { margin:0; font-size: 0.85rem; color:#f8fafc; }
+.dc-subtitle { font-size: 0.65rem; color: #64748b; margin-top: 0.1rem; }
 .badge-status {
   padding: 0.15rem 0.5rem;
   border-radius: 12px;
@@ -698,13 +698,31 @@ body {
 
 .dc-stats {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  row-gap: 0.4rem;
-  font-size: 0.75rem;
-  margin-bottom: 0.75rem;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
 }
-.dc-stats > div { display: flex; justify-content: space-between; }
-.dc-stats > div > span:last-child { color: #f8fafc; }
+.dc-stats > div { 
+  display: flex; 
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 0.1rem;
+}
+.dc-stats > div > span:first-child { 
+  color: #94a3b8;
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.dc-stats > div > span:last-child { 
+  color: #f8fafc;
+  font-size: 0.7rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .dc-stats .text-green { color: #00b87c !important; }
 
 .dc-product {

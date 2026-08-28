@@ -1060,14 +1060,14 @@
           if (t.manual) prod = "[Manual] " + prod;
 
           tasksHtml += `
-          <div style="border-top: 1px solid var(--border); padding-top: 0.5rem; margin-top: 0.5rem;">
-            <div class="dc-product" style="font-size: 0.85rem; display:flex; justify-content:space-between; align-items:center;">
+          <div style="border-top: 1px solid var(--border); padding-top: 0.4rem; margin-top: 0.4rem;">
+            <div class="dc-product" style="display:flex; justify-content:space-between; align-items:center;">
               <strong>${escapeHtml(prod)}</strong>
-              <span class="badge-status ${cls}" style="font-size:0.65rem;">● ${label}</span>
+              <span class="badge-status ${cls}">● ${label}</span>
             </div>
-            <div class="dc-stats" style="grid-template-columns: 1fr 1fr 1fr; font-size: 0.75rem; margin-top:0.25rem;">
+            <div class="dc-stats">
               <div><span>Target/Nilai</span> <span class="text-green">${bid}</span></div>
-              <div><span>Info/Durasi</span> <span style="font-size:0.65rem;">${eta}</span></div>
+              <div><span>Info/Durasi</span> <span>${eta}</span></div>
               <div><span>Op</span> <span>${escapeHtml(op)}</span></div>
             </div>
           </div>
