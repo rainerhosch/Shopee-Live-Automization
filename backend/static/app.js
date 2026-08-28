@@ -343,6 +343,28 @@
     }
   };
 
+  window.updateIklanFields = function () {
+    const tujuan = $("iklan-tujuan");
+    const roasRow = $("iklan-roas-row");
+    const roas = $("iklan-roas");
+    const roasCustom = $("iklan-roas-custom-field");
+    const tipeModal = $("iklan-tipe-modal");
+    const modalHarian = $("iklan-modal-harian-field");
+    const modalPenambahan = $("iklan-penambahan-modal-field");
+
+    if (tujuan && roasRow) {
+      roasRow.style.display = tujuan.value === "GMV (Max ROAS)" ? "flex" : "none";
+    }
+    if (roas && roasCustom) {
+      roasCustom.style.display = roas.value === "Masukan Target" ? "block" : "none";
+    }
+    if (tipeModal && modalHarian && modalPenambahan) {
+      const isHarian = tipeModal.value === "Atur Modal Harian";
+      modalHarian.style.display = isHarian ? "block" : "none";
+      modalPenambahan.style.display = isHarian ? "block" : "none";
+    }
+  };
+
   window.currentTaskPayload = function (type) {
     type = type || state.activeTab;
     const operator = document.querySelector('.operator-input') ? document.querySelector('.operator-input').value.trim() : null;
@@ -974,21 +996,53 @@
         let devHasError = false;
         let tasksHtml = "";
 
-        (b.tasks || []).forEach(t => {
+        // Combine scheduled tasks, active task, and queued tasks
+        let allDevTasks = [...(b.tasks || [])];
+        if (b.active_task && !allDevTasks.find(x => x.id === b.active_task.id)) allDevTasks.push(b.active_task);
+        (b.queue || []).forEach(qt => {
+          if (!allDevTasks.find(x => x.id === qt.id)) allDevTasks.push(qt);
+        });
+
+        allDevTasks.forEach(t => {
           hasAnyTask = true;
           if (t.last_error) devHasError = true;
 
           let cls = 'idle';
           let label = 'IDLE';
+          let isActive = (b.active_task && b.active_task.id === t.id);
+          let isQueued = (b.queue || []).find(x => x.id === t.id);
+
           if (t.last_error) { cls = 'error'; label = 'ERROR'; }
+          else if (isActive) { cls = 'live'; label = 'RUNNING'; }
+          else if (isQueued) { cls = 'warn'; label = 'QUEUED'; }
           else if (b.status === 'running' && t.enabled) { cls = 'live'; label = 'LIVE'; }
           else if (b.status === 'paused' || !t.enabled) { cls = 'pause'; label = 'PAUSE'; }
 
-          let bid = cls === 'idle' || cls === 'error' ? '-' : "Rp " + (Math.floor(Math.random() * 300) + 50) + "K";
-          let next = cls === 'idle' || cls === 'error' ? '-' : "Rp " + (Math.floor(Math.random() * 300) + 50) + "K";
-          let eta = cls === 'idle' || cls === 'error' ? '--:--' : `00:${String(Math.floor(Math.random() * 59)).padStart(2, '0')}`;
+          let bid = "-";
+          let eta = "-";
+          if (t.type === 'lelang') {
+            bid = t.params.harga ? "Rp " + Number(t.params.harga).toLocaleString("id-ID") : "-";
+            eta = t.params.batas_waktu || "-";
+          } else if (t.type === 'iklan_live') {
+            let modal = t.params.modal || t.params.modal_harian || t.params.penambahan_modal || 0;
+            bid = modal ? "Rp " + Number(modal).toLocaleString("id-ID") : "No Limit";
+            eta = t.params.tujuan || "-";
+          } else if (t.type === 'bonus_coin') {
+            bid = t.params.jumlah_koin ? t.params.jumlah_koin + " Koin" : "-";
+            eta = t.params.jumlah_claim ? t.params.jumlah_claim + " Klaim" : "-";
+          } else if (t.type === 'hujan_bonus') {
+            bid = t.params.koin ? t.params.koin + " Koin" : "-";
+            eta = t.params.durasi || "-";
+          }
+          
+          if (cls === 'idle' || cls === 'error') {
+            // Optional: keep real values even if idle/error, but maybe dim them?
+            // The original logic hid them. Let's show the real config anyway!
+          }
+
           let op = t.params.operator || "Auto";
           let prod = t.type.toUpperCase() + (t.params.judul ? " - " + t.params.judul : "");
+          if (t.manual) prod = "[Manual] " + prod;
 
           tasksHtml += `
           <div style="border-top: 1px solid var(--border); padding-top: 0.5rem; margin-top: 0.5rem;">
@@ -997,19 +1051,19 @@
               <span class="badge-status ${cls}" style="font-size:0.65rem;">● ${label}</span>
             </div>
             <div class="dc-stats" style="grid-template-columns: 1fr 1fr 1fr; font-size: 0.75rem; margin-top:0.25rem;">
-              <div><span>Bid</span> <span class="text-green">${bid}</span></div>
-              <div><span>ETA</span> <span>${eta}</span></div>
+              <div><span>Target/Nilai</span> <span class="text-green">${bid}</span></div>
+              <div><span>Info/Durasi</span> <span style="font-size:0.65rem;">${eta}</span></div>
               <div><span>Op</span> <span>${escapeHtml(op)}</span></div>
             </div>
           </div>
         `;
 
-          if (cls === 'live' && t.type === 'lelang') {
+          if ((cls === 'live' || cls === 'warn' || isActive) && t.type === 'lelang') {
             tableHtml += `
             <tr>
               <td><a href="#" class="t-dev">${escapeHtml(devName)}</a></td>
               <td>${escapeHtml(prod)}</td>
-              <td><span class="badge-status live">● LIVE</span></td>
+              <td><span class="badge-status ${cls}">● ${label}</span></td>
               <td class="t-bid">${bid}</td>
               <td>${eta}</td>
               <td>${escapeHtml(op)}</td>
@@ -1020,7 +1074,7 @@
 
         if (devHasError) errorCount++;
 
-        if (b.tasks && b.tasks.length > 0) {
+        if (allDevTasks.length > 0) {
           let devStatusCls = b.status === "running" ? "live" : (b.status === "paused" ? "pause" : "idle");
           gridHtml += `
           <div class="device-card-modern">

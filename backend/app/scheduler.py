@@ -414,9 +414,13 @@ class BotScheduler:
                     success = await device_manager.tap_text(self.device, text_target, timeout=5, tap_right_edge=tap_right)
                     if success:
                         resp = {"code": 10000, "message": f"Text matched: {text_target}"}
+                    elif step.get("strict_text"):
+                        return {"ok": False, "error": f"Strict text match failed: '{text_target}' not found."}
             
             # 2. Fallback to coordinate tap
             if not resp:
+                if step.get("strict_text") and text_target and not dry:
+                    return {"ok": False, "error": f"Strict text match failed: '{text_target}' not found (fallback blocked)."}
                 resp = await device_manager.tap(
                     self.device,
                     step["x"],
@@ -425,6 +429,29 @@ class BotScheduler:
                     dry_run=dry,
                 )
             return {"ok": resp.get("code") == 10000, "step": step, "response": resp}
+
+        if kind == "assert_text":
+            text_target = step.get("text_target")
+            if not text_target:
+                return {"ok": True}
+            if dry:
+                return {"ok": True, "step": step}
+                
+            timeout = step.get("timeout_ms", 5000) / 1000.0
+            start = time.time()
+            found = False
+            
+            await log_bus.info(f"Validating text '{text_target}' on screen... (timeout={timeout}s)")
+            while time.time() - start < timeout:
+                if await device_manager.check_text_exists(self.device, text_target):
+                    found = True
+                    break
+                await asyncio.sleep(0.5)
+                
+            if not found:
+                return {"ok": False, "error": f"Validation failed: Text '{text_target}' did not appear."}
+            await log_bus.info(f"Validation success: '{text_target}' found.")
+            return {"ok": True, "step": step}
 
         if kind == "swipe":
             resp = await device_manager.swipe(
@@ -519,6 +546,12 @@ class BotScheduler:
         task = {"id": task_id, "type": task_type, "params": params or {}, "enabled": True, "manual": True}
         self.queue.append(task)
         await log_bus.info(f"Task {task_id} added to manual queue.")
+        
+        # Auto-start bot to process the manual queue if it's not running
+        if self.status in ("stopped", "paused"):
+            await log_bus.info("Auto-starting bot to process manual task...")
+            await self.start(device=self.device, profile=self.profile_name, dry_run=self.dry_run)
+            
         return []
 
 

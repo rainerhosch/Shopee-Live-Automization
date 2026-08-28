@@ -165,6 +165,36 @@
           </section>
         </div>
 
+        <!-- SECTION 3: DEVICE GRID -->
+        <h3 class="kpi-title" style="margin-top: 2.5rem; margin-bottom: 1rem; font-size: 1rem;">STATUS PERANGKAT & TASK</h3>
+        <div class="device-grid-modern" id="mock-device-grid">
+          <!-- Populated by app.js -->
+          <div class="muted">Loading devices...</div>
+        </div>
+
+        <!-- SECTION 4: ACTIVE BIDS TICKER -->
+        <div class="ticker-panel" style="margin-top: 2rem;">
+          <div class="panel-header">
+            <h4>Live Task Ticker</h4>
+            <span class="badge-status live">● LIVE</span>
+          </div>
+          <table class="ticker-table">
+            <thead>
+              <tr>
+                <th>Device</th>
+                <th>Produk / Task</th>
+                <th>Status</th>
+                <th>Nilai / Target</th>
+                <th>Info / Durasi</th>
+                <th>Operator</th>
+              </tr>
+            </thead>
+            <tbody id="mock-ticker-table">
+              <!-- Populated by app.js -->
+            </tbody>
+          </table>
+        </div>
+
 
       </main>
 
@@ -235,7 +265,7 @@
         </div>
 
         <div class="task-bottom-row"
-          style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
+          style="display: grid; grid-template-columns: 1.2fr 1fr 1.2fr; gap: 1.5rem; margin-top: 1.5rem;">
           <!-- BOTTOM LEFT: LOGS -->
           <section class="panel" style="height: 300px; display: flex; flex-direction: column;">
             <div class="section-title">
@@ -246,22 +276,34 @@
               style="flex:1; overflow-y:auto; font-family: monospace; font-size: 0.85rem; padding-top: 0.5rem;"></div>
           </section>
 
-          <!-- BOTTOM RIGHT: QUEUE -->
+          <!-- BOTTOM MIDDLE: QUEUE -->
           <section class="panel" style="height: 300px; display: flex; flex-direction: column;">
             <div class="section-title">
-              <h2 style="margin:0">Active Execution & Queue</h2>
-              <div>
-                <button class="btn btn-sm btn-danger" id="btn-clear-queue">Clear Queue</button>
-                <button class="btn btn-sm btn-danger" id="btn-stop">Stop Bot</button>
+              <h2 style="margin:0">Antrean (Queue)</h2>
+              <div style="display: flex; gap: 0.25rem;">
+                <button class="btn btn-sm btn-primary" id="btn-start">Start</button>
+                <button class="btn btn-sm btn-warn" id="btn-pause">Pause</button>
+                <button class="btn btn-sm btn-danger" id="btn-stop">Stop</button>
+                <button class="btn btn-sm btn-danger" id="btn-clear-queue">Clear</button>
               </div>
             </div>
             <div style="margin-top: .75rem; flex:1; overflow-y:auto;">
-              <div style="margin-bottom:.5rem;">
-                <strong>Running Task: </strong> <span id="active-task-label" class="muted">None</span>
+              <div style="margin-bottom:.5rem; font-size: 0.9rem;">
+                <strong>Running: </strong> <span id="active-task-label" class="muted">None</span>
               </div>
               <div id="queue-list" class="stack" style="gap:.5rem;">
                 <div class="muted">Queue empty.</div>
               </div>
+            </div>
+          </section>
+
+          <!-- BOTTOM RIGHT: TASKS -->
+          <section class="panel" style="height: 300px; display: flex; flex-direction: column;">
+            <div class="section-title">
+              <h2 style="margin:0">Task Bot Dikonfigurasi</h2>
+            </div>
+            <div id="task-list" class="stack" style="flex:1; overflow-y:auto; padding-top: 0.5rem; gap:.5rem;">
+              <div class="muted">Belum ada task.</div>
             </div>
           </section>
         </div>
@@ -344,7 +386,7 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=27"></script>
+  <script src="/static/app.js?v=30"></script>
 </body>
 
 </html>
