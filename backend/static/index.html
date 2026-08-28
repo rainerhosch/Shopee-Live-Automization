@@ -4,8 +4,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="/static/styles.css?v=3" />
+  <link rel="stylesheet" href="/static/styles.css?v=4" />
   <link rel="icon" type="image/x-icon" href="/assets/image/favicon.ico" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -20,23 +21,71 @@
         </div>
       </div>
       <nav class="sidebar-nav">
-        <button class="nav-item active" data-view="monitor">
+        <button class="nav-item active" data-view="dashboard_new">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          <span class="nav-text">Dashboard</span>
+        </button>
+
+        <!-- <button class="nav-item" data-view="monitor">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
           <span class="nav-text">Monitoring</span>
+        </button> -->
+        <button class="nav-item" data-view="task" data-partial="form-lelang.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+          <span class="nav-text">Auto Lelang</span>
         </button>
-        <button class="nav-item" data-view="config">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-          <span class="nav-text">Configure Task</span>
+        <button class="nav-item" data-view="task" data-partial="form-iklan.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+          <span class="nav-text">Auto Iklan Live</span>
+        </button>
+        <button class="nav-item" data-view="task" data-partial="form-bonus.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="16"></line>
+            <line x1="8" y1="12" x2="16" y2="12"></line>
+          </svg>
+          <span class="nav-text">Auto Bonus Coin</span>
+        </button>
+        <button class="nav-item" data-view="task" data-partial="form-hujan.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M20 16.2A5 5 0 0 0 18 7h-1.26a8 8 0 1 0-11.62 9"></path>
+            <polyline points="16 16 12 20 8 16"></polyline>
+            <line x1="12" y1="12" x2="12" y2="20"></line>
+          </svg>
+          <span class="nav-text">Auto Hujan Bonus</span>
         </button>
         <button class="nav-item" data-view="calibration">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <circle cx="12" cy="12" r="6"></circle>
+            <circle cx="12" cy="12" r="2"></circle>
+          </svg>
           <span class="nav-text">Calibration</span>
         </button>
       </nav>
       <!-- Bottom toggle button for modern look -->
       <div class="sidebar-footer">
         <button id="btn-toggle-sidebar" class="nav-item toggle-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chevron-icon"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" class="chevron-icon">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
           <span class="nav-text">Collapse</span>
         </button>
       </div>
@@ -52,422 +101,298 @@
         </div>
       </header>
 
-      <!-- VIEW: MONITOR -->
-      <main id="view-monitor" class="view-panel">
-        <h2>Monitoring Dashboard</h2>
-        <div class="monitor-grid" id="monitor-grid">
+
+      <!-- VIEW: NEW DASHBOARD (MOCKUP) -->
+      <main id="view-dashboard_new" class="view-panel dashboard-modern"
+        style="padding: 1.5rem; background-color: #0b0d12;">
+
+        <!-- SECTION 1: KPI -->
+        <div class="kpi-header">
+          <div>
+            <h3 class="kpi-title">KPI HARI INI</h3>
+            <h1 class="kpi-subtitle">Ringkasan armada live</h1>
+          </div>
+          <div class="kpi-right">
+            <span>Volume bid aktif <strong style="color:#fff">Rp 3.5jt</strong></span>
+            <span style="margin-left: 1rem;">Viewers <strong style="color:#fff">19.156</strong></span>
+          </div>
+        </div>
+
+        <div class="kpi-cards">
+          <div class="kpi-card">
+            <div class="kpi-label">HP TERHUBUNG <span class="icon-right">📱</span></div>
+            <div class="kpi-value text-blue">24</div>
+            <div class="kpi-desc">Device</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">TOTAL TASK <span class="icon-right text-green">((•))</span></div>
+            <div class="kpi-value text-green">15</div>
+            <div class="kpi-desc">Semua task berjalan</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">SEDANG EKSEKUSI <span class="icon-right text-blue">⚡</span></div>
+            <div class="kpi-value text-blue">5</div>
+            <div class="kpi-desc">Real-time eksekusi</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">IDLE / PAUSE <span class="icon-right text-yellow">⏱</span></div>
+            <div class="kpi-value text-yellow">6</div>
+            <div class="kpi-desc">Menunggu siklus</div>
+          </div>
+          <div class="kpi-card border-red">
+            <div class="kpi-label">ERROR <span class="icon-right text-red">⚠</span></div>
+            <div class="kpi-value text-red">3</div>
+            <div class="kpi-desc text-red">Perlu intervensi operator</div>
+          </div>
+        </div>
+
+        <!-- SECTION 2: CHART & FEED -->
+        <div class="middle-section">
+          <div class="chart-panel">
+            <div class="panel-header">
+              <div>
+                <h4>Live device & aktivitas automation</h4>
+                <div class="kpi-desc">Jumlah HP LIVE vs event bid per 10 menit</div>
+              </div>
+              <div class="text-green" style="font-size:0.75rem; font-weight:bold;">STREAMING</div>
+            </div>
+            <div style="height: 250px; width: 100%; position: relative;">
+              <canvas id="activityChart"></canvas>
+            </div>
+          </div>
+          <div class="feed-panel">
+            <div class="panel-header">
+              <h4>Automation feed</h4>
+              <a href="#" style="color:#3b82f6; font-size:0.8rem; text-decoration:none;">Semua log</a>
+            </div>
+            <div class="feed-list" id="mock-feed-list"></div>
+          </div>
+          </section>
+        </div>
+
+        <!-- SECTION 3: DEVICE GRID -->
+        <h3 class="kpi-title" style="margin-top: 2.5rem; margin-bottom: 1rem; font-size: 1rem;">STATUS PERANGKAT & TASK
+        </h3>
+        <div class="device-grid-modern" id="mock-device-grid">
+          <!-- Populated by app.js -->
           <div class="muted">Loading devices...</div>
         </div>
+
+        <!-- SECTION 4: ACTIVE BIDS TICKER -->
+        <div class="ticker-panel" style="margin-top: 2rem;">
+          <div class="panel-header">
+            <h4>Live Task Ticker</h4>
+            <span class="badge-status live">● LIVE</span>
+          </div>
+          <table class="ticker-table">
+            <thead>
+              <tr>
+                <th>Device</th>
+                <th>Produk / Task</th>
+                <th>Status</th>
+                <th>Nilai / Target</th>
+                <th>Info / Durasi</th>
+                <th>Operator</th>
+              </tr>
+            </thead>
+            <tbody id="mock-ticker-table">
+              <!-- Populated by app.js -->
+            </tbody>
+          </table>
+        </div>
+
+
       </main>
 
-      <!-- VIEW: CONFIG -->
-      <main id="view-config" class="view-panel hidden layout" style="padding: 1.5rem;">
-        
-    <!-- LEFT -->
-    <div class="stack">
-      <section class="panel">
-        <h2>Device & Status</h2>
-        <div class="btn-row" style="margin-bottom:.75rem">
-          <button class="btn btn-sm" id="btn-refresh-devices">Refresh devices</button>
-          <button class="btn btn-sm" id="btn-reconnect">Reconnect Panda</button>
-        </div>
-        <div class="device-list" id="device-list">
-          <div class="muted">Loading devices…</div>
-        </div>
-        <div class="field" style="margin-top:.85rem">
-          <label>Connection Mode</label>
-          <select id="select-conn-mode">
-            <option value="adb">Pure ADB (USB/WiFi)</option>
-            <option value="panda" disabled>Panda WebSocket</option>
-          </select>
-        </div>
-        <div class="field" id="field-adb-path">
-          <label>ADB Path (optional)</label>
-          <input id="input-adb-path" placeholder="adb (default)" />
-        </div>
-        <div class="field" id="field-panda-url">
-          <label>Panda URL (optional)</label>
-          <input id="input-panda-url" placeholder="ws://127.0.0.1:22222/" />
-        </div>
-        <div class="field">
-          <label>Selected device serial</label>
-          <input id="input-device" placeholder="serial or IP:port" />
-        </div>
-        <div class="field">
-          <label>Coordinate profile</label>
-          <select id="select-profile"></select>
-        </div>
-        <div class="field">
-          <label>Sandbox (no real taps)</label>
-          <select id="select-dry">
-            <option value="true">ON (safe)</option>
-            <option value="false">OFF (live taps)</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Step delay (ms)</label>
-          <input id="input-delay" type="number" min="100" step="50" value="600" />
-        </div>
-        <div class="btn-row">
-          <button class="btn btn-sm" id="btn-save-settings">Save settings</button>
-        </div>
-      </section>
+      <!-- VIEW: DYNAMIC TASK CONFIG -->
+      <main id="view-task" class="view-panel hidden layout-task" style="padding: 1.5rem;">
 
-    </div>
-
-    <!-- CENTER -->
-    <div class="stack">
-      <section class="panel">
-        <div class="section-title">
-          <h2 style="margin:0">Task Creation <span id="header-dev-1" style="font-size: 0.8rem; color: var(--accent); font-weight: normal; margin-left: 0.5rem;"></span></h2>
-        </div>
-        <div class="tabs" id="task-tabs">
-          <button class="tab active" data-tab="lelang">Lelang</button>
-          <button class="tab" data-tab="iklan_live">Iklan Live</button>
-          <button class="tab" data-tab="bonus_koin">Bonus Koin</button>
-          <button class="tab" data-tab="hujan_bonus">Hujan Bonus</button>
-          <button class="tab" data-tab="open_shopee">Open Shopee</button>
-        </div>
-
-        <div id="form-lelang" class="task-form">
-          <div class="field">
-            <label>Judul Lelang</label>
-            <input id="lelang-judul" placeholder="Lelang1" required />
-          </div>
-          <div class="field-row" style="grid-template-columns: 1fr 1fr 1fr;">
-            <div class="field">
-              <label>Harga</label>
-              <input id="lelang-harga" placeholder="Contoh: 50000" required />
+        <div class="task-top-row" style="display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem;">
+          <!-- LEFT: DEVICE SETTINGS -->
+          <section class="panel">
+            <h2>Device Configuration</h2>
+            <div class="btn-row" style="margin-bottom:.75rem">
+              <button class="btn btn-sm" id="btn-refresh-devices">Refresh devices</button>
+              <button class="btn btn-sm" id="btn-reconnect">Reconnect Panda</button>
+            </div>
+            <div class="device-list" id="device-list">
+              <div class="muted">Loading devices...</div>
+            </div>
+            <div class="field" style="margin-top:.85rem">
+              <label>Connection Mode</label>
+              <select id="select-conn-mode">
+                <option value="adb">Pure ADB (USB/WiFi)</option>
+                <option value="panda" disabled>Panda WebSocket</option>
+              </select>
+            </div>
+            <div class="field" id="field-adb-path">
+              <label>ADB Path (optional)</label>
+              <input id="input-adb-path" placeholder="adb (default)" />
+            </div>
+            <div class="field" id="field-panda-url">
+              <label>Panda URL (optional)</label>
+              <input id="input-panda-url" placeholder="ws://127.0.0.1:22222/" />
             </div>
             <div class="field">
-              <label>Kelipatan</label>
-              <input id="lelang-kelipatan-harga" type="number" placeholder="Contoh: 10000" />
+              <label>Selected device serial</label>
+              <input id="input-device" placeholder="serial or IP:port" />
             </div>
             <div class="field">
-              <label>Max Harga</label>
-              <input id="lelang-max-harga" type="number" placeholder="Contoh: 100000" />
+              <label>Coordinate profile</label>
+              <select id="select-profile"></select>
             </div>
-          </div>
-          <div class="field-row">
             <div class="field">
-              <label>Mode Lelang</label>
-              <select id="lelang-mode">
-                <option>Tercepat</option>
-                <option>Acak</option>
+              <label>Sandbox (no real taps)</label>
+              <select id="select-dry">
+                <option value="true">ON (safe)</option>
+                <option value="false">OFF (live taps)</option>
               </select>
             </div>
             <div class="field">
-              <label>Peserta</label>
-              <select id="lelang-peserta">
-                <option>Semua Penonton</option>
-                <option>Hanya Pengikut</option>
-              </select>
+              <label>Step delay (ms)</label>
+              <input id="input-delay" type="number" min="100" step="50" value="600" />
             </div>
-          </div>
-          <div class="field-row">
-            <div class="field">
-              <label>Batas Waktu</label>
-              <select id="lelang-batas">
-                <option>10dtk</option>
-                <option>30dtk</option>
-                <option>60dtk</option>
-                <option>120dtk</option>
-              </select>
+            <div class="btn-row">
+              <button class="btn btn-sm" id="btn-save-settings">Save settings</button>
             </div>
-            <div class="field">
-              <label>Interval (detik)</label>
-              <input type="number" id="lelang-interval" value="300" min="10" />
+          </section>
+
+          <!-- RIGHT: DYNAMIC TASK FORM -->
+          <section class="panel" style="display: flex; flex-direction: column;">
+            <div class="section-title">
+              <h2 style="margin:0" id="task-form-title">Task Configuration <span id="header-dev-1"
+                  style="font-size: 0.8rem; color: var(--accent); font-weight: normal; margin-left: 0.5rem;"></span>
+              </h2>
             </div>
-          </div>
+            <div id="dynamic-task-container" style="flex: 1; margin-top: 1rem;">
+              <div class="muted">Loading task interface...</div>
+            </div>
+          </section>
         </div>
 
-        <div id="form-iklan_live" class="task-form hidden">
-          <div class="field-row">
-            <div class="field">
-              <label>Tujuan</label>
-              <select id="iklan-tujuan" onchange="updateIklanFields()">
-                <option>Tingkatkan Penonton</option>
-                <option>GMV (Max Auto)</option>
-                <option>GMV (Max ROAS)</option>
-              </select>
+        <div class="task-bottom-row"
+          style="display: grid; grid-template-columns: 1.2fr 1fr 1.2fr; gap: 1.5rem; margin-top: 1.5rem;">
+          <!-- BOTTOM LEFT: LOGS -->
+          <section class="panel" style="height: 300px; display: flex; flex-direction: column;">
+            <div class="section-title">
+              <h2 style="margin:0">Live Logs (Device)</h2>
+              <button class="btn btn-sm" id="btn-clear-logs">Clear view</button>
             </div>
-          </div>
-          <div class="field-row" id="iklan-roas-row" style="display: none;">
-            <div class="field">
-              <label>Target ROAS</label>
-              <select id="iklan-roas" onchange="updateIklanFields()">
-                <option>ROAS = 5.4</option>
-                <option>ROAS = 8.0</option>
-                <option>ROAS = 9.7</option>
-                <option>Masukan Target</option>
-              </select>
-            </div>
-            <div class="field" id="iklan-roas-custom-field" style="display: none;">
-              <label>Nilai Target ROAS</label>
-              <input id="iklan-roas-custom" type="number" step="0.1" min="1.0" max="50.0" value="5.0" />
-            </div>
-          </div>
-          <div class="field-row">
-            <div class="field">
-              <label>Durasi Hari</label>
-              <select id="iklan-durasi-hari">
-                <option>Tak Terbatas</option>
-                <option>1 hari</option>
-                <option>3 hari</option>
-                <option>7 hari</option>
-                <option>14 hari</option>
-                <option>Atur Sendiri</option>
-              </select>
-            </div>
-            <div class="field" id="iklan-durasi-jam-field">
-              <label>Durasi Jam</label>
-              <select id="iklan-durasi-jam">
-                <option>Sepanjang Hari</option>
-                <option>30 Menit</option>
-                <option>1 Jam</option>
-                <option>2 Jam</option>
-                <option>4 Jam</option>
-                <option>Atur Sendiri</option>
-              </select>
-            </div>
-          </div>
-          <div class="field-row">
-            <div class="field">
-              <label>Tipe Modal</label>
-              <select id="iklan-tipe-modal" onchange="updateIklanFields()">
-                <option>Modal Tidak Terbatas</option>
-                <option>Atur Modal Harian</option>
-              </select>
-            </div>
-            <div class="field" id="iklan-modal-harian-field" style="display: none;">
-              <label>Modal Harian (Buat Baru)</label>
-              <input id="iklan-modal-harian" type="number" value="60000" />
-            </div>
-            <div class="field" id="iklan-penambahan-modal-field" style="display: none;">
-              <label>Penambahan Modal (Top Up)</label>
-              <input id="iklan-penambahan-modal" type="number" value="5000" />
-            </div>
-          </div>
-          <script>
-            function updateIklanFields() {
-              const tujuan = document.getElementById("iklan-tujuan").value;
-              const roasRow = document.getElementById("iklan-roas-row");
-              const jamField = document.getElementById("iklan-durasi-jam-field");
+            <div class="log-box" id="log-box"
+              style="flex:1; overflow-y:auto; font-family: monospace; font-size: 0.85rem; padding-top: 0.5rem;"></div>
+          </section>
 
-              if (tujuan === "GMV (Max ROAS)") {
-                roasRow.style.display = "grid";
-              } else {
-                roasRow.style.display = "none";
-              }
+          <!-- BOTTOM MIDDLE: QUEUE -->
+          <section class="panel" style="height: 300px; display: flex; flex-direction: column;">
+            <div class="section-title">
+              <h2 style="margin:0">Antrean (Queue)</h2>
+              <div style="display: flex; gap: 0.25rem;">
+                <button class="btn btn-sm btn-primary" id="btn-start">Start</button>
+                <button class="btn btn-sm btn-warn" id="btn-pause">Pause</button>
+                <button class="btn btn-sm btn-danger" id="btn-stop">Stop</button>
+                <button class="btn btn-sm btn-danger" id="btn-clear-queue">Clear</button>
+              </div>
+            </div>
+            <div style="margin-top: .75rem; flex:1; overflow-y:auto;">
+              <div style="margin-bottom:.5rem; font-size: 0.9rem;">
+                <strong>Running: </strong> <span id="active-task-label" class="muted">None</span>
+              </div>
+              <div id="queue-list" class="stack" style="gap:.5rem;">
+                <div class="muted">Queue empty.</div>
+              </div>
+            </div>
+          </section>
 
-              if (tujuan === "Tingkatkan Penonton") {
-                jamField.style.display = "block";
-              } else {
-                jamField.style.display = "none";
-              }
-
-              const roas = document.getElementById("iklan-roas").value;
-              const roasCustom = document.getElementById("iklan-roas-custom-field");
-              if (tujuan === "GMV (Max ROAS)" && roas === "Masukan Target") {
-                roasCustom.style.display = "block";
-              } else {
-                roasCustom.style.display = "none";
-              }
-
-              const modalTipe = document.getElementById("iklan-tipe-modal").value;
-              const modalHarian = document.getElementById("iklan-modal-harian-field");
-              const penambahanModal = document.getElementById("iklan-penambahan-modal-field");
-              if (modalTipe === "Atur Modal Harian") {
-                modalHarian.style.display = "block";
-                penambahanModal.style.display = "block";
-              } else {
-                modalHarian.style.display = "none";
-                penambahanModal.style.display = "none";
-              }
-            }
-          </script>
-          <div class="field-row" style="grid-template-columns: 1fr 1fr; margin-top: .5rem;">
-            <!-- Removed stray button -->
-          </div>
-          <div class="field">
-            <label>Interval (detik)</label>
-            <input type="number" id="iklan-interval" value="3600" min="60" />
-          </div>
+          <!-- BOTTOM RIGHT: TASKS -->
+          <section class="panel" style="height: 300px; display: flex; flex-direction: column;">
+            <div class="section-title">
+              <h2 style="margin:0">Task Bot Dikonfigurasi</h2>
+            </div>
+            <div id="task-list" class="stack" style="flex:1; overflow-y:auto; padding-top: 0.5rem; gap:.5rem;">
+              <div class="muted">Belum ada task.</div>
+            </div>
+          </section>
         </div>
-
-        <div id="form-bonus_koin" class="task-form hidden">
-          <div class="field-row">
-            <div class="field">
-              <label>Untuk dibagikan</label>
-              <input type="number" id="bonus-bagi" value="25000" />
-            </div>
-            <div class="field">
-              <label>Koin per klaim</label>
-              <input type="number" id="bonus-claim" value="1000" />
-            </div>
-          </div>
-          <div class="field-row">
-            <div class="field">
-              <label>Interval (detik)</label>
-              <input type="number" id="bonus-interval" value="600" min="60" />
-            </div>
-          </div>
-        </div>
-
-        <div id="form-hujan_bonus" class="task-form hidden">
-          <div class="field-row">
-            <div class="field">
-              <label>Koin untuk dibagikan</label>
-              <input type="number" id="hujan-koin" value="255" />
-            </div>
-            <div class="field">
-              <label>Interval (detik)</label>
-              <input id="hujan-interval" type="number" value="600" min="10" />
-            </div>
-          </div>
-        </div>
-
-        <div id="form-open_shopee" class="task-form hidden">
-          <p class="muted">Menjalankan startApk Shopee sekali (atau terjadwal). Navigasi ke live studio masih manual /
-            butuh kalibrasi lanjutan.</p>
-          <div class="field">
-            <label>Interval (detik)</label>
-            <input id="open-interval" type="number" value="3600" min="10" />
-          </div>
-        </div>
-
-        <div class="btn-row" style="margin-top:.5rem">
-          <button class="btn btn-primary" id="btn-add-task">Add scheduled task</button>
-          <button class="btn" id="btn-run-once">Run once now</button>
-        </div>
-      </section>
-
-      <section class="panel">
-        <div class="section-title">
-          <h2 style="margin:0">Active Execution & Queue <span id="header-dev-2" style="font-size: 0.8rem; color: var(--accent); font-weight: normal; margin-left: 0.5rem;"></span></h2>
-          <button class="btn btn-sm btn-danger" id="btn-clear-queue">Clear Queue</button>
-        </div>
-        <div style="margin-top: .75rem;">
-          <div style="margin-bottom:.5rem;">
-            <strong>Running Task: </strong> <span id="active-task-label" class="muted">None</span>
-          </div>
-          <div id="queue-list" class="stack" style="gap:.5rem;">
-            <div class="muted">Queue empty.</div>
-          </div>
-        </div>
-      </section>
-
-      <section class="panel">
-        <div class="section-title">
-          <h2 style="margin:0">Scheduled Tasks <span id="header-dev-3" style="font-size: 0.8rem; color: var(--accent); font-weight: normal; margin-left: 0.5rem;"></span></h2>
-          <div>
-            <button class="btn btn-sm btn-ok" id="btn-start">Start All</button>
-            <button class="btn btn-sm btn-warn" id="btn-pause">Pause All</button>
-            <button class="btn btn-sm btn-danger" id="btn-stop">Stop All</button>
-            <button class="btn btn-sm" id="btn-clear-tasks">Clear all</button>
-          </div>
-        </div>
-        <p class="muted" id="bot-summary" style="margin-top:0.25rem; margin-bottom: 0.75rem;">Status: stopped</p>
-        <div id="task-list">
-          <div class="muted">No tasks yet.</div>
-        </div>
-      </section>
-
-      
-    </div>
-
-    <!-- RIGHT -->
-    <div class="stack">
-
-      <section class="panel">
-        <div class="section-title">
-          <h2 style="margin:0">Live Logs</h2>
-          <button class="btn btn-sm" id="btn-clear-logs">Clear view</button>
-        </div>
-        <div class="log-box" id="log-box"></div>
-      </section>
-    </div>
-  
       </main>
 
       <!-- VIEW: CALIBRATION -->
       <main id="view-calibration" class="view-panel hidden" style="padding: 1.5rem;">
         <h2>Coordinate Calibration</h2>
         <section class="panel" id="calibration-panel">
-        <div class="section-title">
-          <h2 style="margin:0">Coordinate Calibration · Admin Live</h2>
-          <div>
-            <button class="btn btn-sm" id="btn-cal-export">📤 Export</button>
-            <button class="btn btn-sm" id="btn-cal-import" onclick="document.getElementById('file-import').click()">📥
-              Import</button>
-            <input type="file" id="file-import" accept=".json" style="display:none" />
-            <button class="btn btn-sm" id="btn-cal-capture">📷 Live Capture</button>
-            <span class="muted" id="cal-progress-label">0 / 0</span>
+          <div class="section-title">
+            <h2 style="margin:0">Coordinate Calibration · Admin Live</h2>
+            <div>
+              <button class="btn btn-sm" id="btn-cal-export">📤 Export</button>
+              <button class="btn btn-sm" id="btn-cal-import" onclick="document.getElementById('file-import').click()">📥
+                Import</button>
+              <input type="file" id="file-import" accept=".json" style="display:none" />
+              <button class="btn btn-sm" id="btn-cal-capture">📷 Live Capture</button>
+              <span class="muted" id="cal-progress-label">0 / 0</span>
+            </div>
           </div>
-        </div>
-        <div class="progress-bar"><span id="cal-progress-bar"></span></div>
-        <p class="muted" style="margin-top:0">
-          1) Buka UI yang sesuai di HP Admin Live · <br>
-          2) Pilih titik di checklist · <br>
-          3) Klik posisi pada gambar referensi (atau isi X/Y %) · <br>
-          4) Save (+ optional Test tap).<br>
-        </p>
+          <div class="progress-bar"><span id="cal-progress-bar"></span></div>
+          <p class="muted" style="margin-top:0">
+            1) Buka UI yang sesuai di HP Admin Live · <br>
+            2) Pilih titik di checklist · <br>
+            3) Klik posisi pada gambar referensi (atau isi X/Y %) · <br>
+            4) Save (+ optional Test tap).<br>
+          </p>
 
-        <div class="cal-layout">
-          <div>
-            <div class="field">
-              <label>Reference group image</label>
-              <select id="cal-group">
-                <option value="home">Home Live bar</option>
-                <option value="lelang">Form Lelang</option>
-                <option value="iklan">Form Iklan Live</option>
-                <option value="lainnya">Menu Lainnya</option>
-                <option value="bonus">Form Bonus Koin</option>
-                <option value="hujan">Form Hujan Bonus</option>
-              </select>
-            </div>
-            <div class="ref-frame" id="ref-frame">
-              <img id="ref-image" alt="Reference UI" draggable="false" />
-              <div class="crosshair" id="ref-crosshair"></div>
-            </div>
-            <p class="ref-hint" id="cal-hint">Klik pada gambar = set X/Y persen relatif ke area gambar.</p>
-          </div>
-
-          <div>
-            <div class="field">
-              <label>Active point key</label>
-              <input id="cal-key" readonly />
-            </div>
-            <div class="field">
-              <label>Label</label>
-              <input id="cal-label" readonly />
-            </div>
-            <div class="field-row">
+          <div class="cal-layout">
+            <div>
               <div class="field">
-                <label>X %</label>
-                <input id="cal-x" type="number" min="0" max="100" step="0.1" />
+                <label>Reference group image</label>
+                <select id="cal-group">
+                  <option value="home">Home Live bar</option>
+                  <option value="lelang">Form Lelang</option>
+                  <option value="iklan">Form Iklan Live</option>
+                  <option value="lainnya">Menu Lainnya</option>
+                  <option value="bonus">Form Bonus Koin</option>
+                  <option value="hujan">Form Hujan Bonus</option>
+                </select>
+              </div>
+              <div class="ref-frame" id="ref-frame">
+                <img id="ref-image" alt="Reference UI" draggable="false" />
+                <div class="crosshair" id="ref-crosshair"></div>
+              </div>
+              <p class="ref-hint" id="cal-hint">Klik pada gambar = set X/Y persen relatif ke area gambar.</p>
+            </div>
+
+            <div>
+              <div class="field">
+                <label>Active point key</label>
+                <input id="cal-key" readonly />
               </div>
               <div class="field">
-                <label>Y %</label>
-                <input id="cal-y" type="number" min="0" max="100" step="0.1" />
+                <label>Label</label>
+                <input id="cal-label" readonly />
               </div>
+              <div class="field-row">
+                <div class="field">
+                  <label>X %</label>
+                  <input id="cal-x" type="number" min="0" max="100" step="0.1" />
+                </div>
+                <div class="field">
+                  <label>Y %</label>
+                  <input id="cal-y" type="number" min="0" max="100" step="0.1" />
+                </div>
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-primary" id="btn-cal-save">Save point</button>
+                <button class="btn btn-ok" id="btn-cal-save-tap">Save + Test tap</button>
+                <button class="btn" id="btn-cal-test-only">Test tap only</button>
+              </div>
+              <p class="muted" id="cal-hint" style="margin-top:.65rem"></p>
+              <h2 style="margin-top:1rem">Checklist</h2>
+              <div class="checklist" id="cal-checklist"></div>
             </div>
-            <div class="btn-row">
-              <button class="btn btn-primary" id="btn-cal-save">Save point</button>
-              <button class="btn btn-ok" id="btn-cal-save-tap">Save + Test tap</button>
-              <button class="btn" id="btn-cal-test-only">Test tap only</button>
-            </div>
-            <p class="muted" id="cal-hint" style="margin-top:.65rem"></p>
-            <h2 style="margin-top:1rem">Checklist</h2>
-            <div class="checklist" id="cal-checklist"></div>
           </div>
-        </div>
-      </section>
+        </section>
       </main>
     </div>
   </div>
 
-  <script src="/static/app.js?v=13"></script>
+  <script src="/static/app.js?v=32"></script>
 </body>
 
 </html>

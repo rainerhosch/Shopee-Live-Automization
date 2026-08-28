@@ -5,7 +5,7 @@ from typing import Any
 from .config import get_point
 
 
-def _tap_step(key: str, profile: dict[str, Any], delay_ms: int, note: str = "", text_target: str = None) -> dict[str, Any]:
+def _tap_step(key: str, profile: dict[str, Any], delay_ms: int, note: str = "", text_target: str = None, strict_text: bool = False) -> dict[str, Any]:
     try:
         pt = get_point(profile, key)
         x, y = pt["x"], pt["y"]
@@ -18,8 +18,18 @@ def _tap_step(key: str, profile: dict[str, Any], delay_ms: int, note: str = "", 
         "x": x,
         "y": y,
         "text_target": text_target,
+        "strict_text": strict_text,
         "delay_ms": delay_ms,
         "note": note or key,
+    }
+
+def _assert_text(text_target: str, timeout_ms: int = 5000, note: str = "") -> dict[str, Any]:
+    return {
+        "kind": "assert_text",
+        "text_target": text_target,
+        "timeout_ms": timeout_ms,
+        "delay_ms": 0,
+        "note": note or f"Assert text: {text_target}"
     }
 
 
@@ -63,7 +73,8 @@ def build_lelang(profile: dict[str, Any], params: dict[str, Any], settings: dict
         raise ValueError(f"Invalid batas_waktu: {batas}")
 
     steps = [
-        _tap_step("home.lelang", profile, delay + 200, "Open Lelang")
+        _tap_step("home.lelang", profile, delay + 200, "Open Lelang"),
+        _assert_text("Harga", timeout_ms=5000, note="Verifikasi Menu Lelang Terbuka")
     ]
     if params.get("judul"):
         steps.append(_tap_step("lelang.judul", profile, delay, "Focus Judul"))
@@ -146,7 +157,8 @@ def build_iklan_live(profile: dict[str, Any], params: dict[str, Any], settings: 
         raise ValueError(f"Invalid durasi_hari: {durasi_hari}")
 
     steps = [
-        _tap_step("home.iklan_live", profile, delay + 3500, "Open Iklan Live")
+        _tap_step("home.iklan_live", profile, delay + 1000, "Open Iklan Live"),
+        _assert_text("Buat Iklan", timeout_ms=8000, note="Verifikasi Menu Iklan Terbuka")
     ]
     
     fallback_steps = [

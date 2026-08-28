@@ -1,0 +1,80 @@
+<div class="field-row">
+  <div class="field">
+    <label>Admin Live / Operator</label>
+    <input class="operator-input" placeholder="Nama Operator..." />
+  </div>
+</div>
+<div class="field-row">
+  <div class="field">
+    <label>Tujuan</label>
+    <select id="iklan-tujuan" onchange="updateIklanFields()">
+      <option>Tingkatkan Penonton</option>
+      <option>GMV (Max Auto)</option>
+      <option>GMV (Max ROAS)</option>
+    </select>
+  </div>
+</div>
+<div class="field-row" id="iklan-roas-row" style="display: none;">
+  <div class="field">
+    <label>Target ROAS</label>
+    <select id="iklan-roas" onchange="updateIklanFields()">
+      <option>ROAS = 5.4</option>
+      <option>ROAS = 8.0</option>
+      <option>ROAS = 9.7</option>
+      <option>Masukan Target</option>
+    </select>
+  </div>
+  <div class="field" id="iklan-roas-custom-field" style="display: none;">
+    <label>Nilai Target ROAS</label>
+    <input id="iklan-roas-custom" type="number" step="0.1" min="1.0" max="50.0" value="5.0" />
+  </div>
+</div>
+<div class="field-row">
+  <div class="field">
+    <label>Durasi Hari</label>
+    <select id="iklan-durasi-hari">
+      <option>Tak Terbatas</option>
+      <option>1 hari</option>
+      <option>3 hari</option>
+      <option>7 hari</option>
+      <option>14 hari</option>
+      <option>Atur Sendiri</option>
+    </select>
+  </div>
+  <div class="field" id="iklan-durasi-jam-field">
+    <label>Durasi Jam</label>
+    <select id="iklan-durasi-jam">
+      <option>Sepanjang Hari</option>
+      <option>30 Menit</option>
+      <option>1 Jam</option>
+      <option>2 Jam</option>
+      <option>4 Jam</option>
+      <option>Atur Sendiri</option>
+    </select>
+  </div>
+</div>
+<div class="field-row">
+  <div class="field">
+    <label>Tipe Modal</label>
+    <select id="iklan-tipe-modal" onchange="updateIklanFields()">
+      <option>Modal Tidak Terbatas</option>
+      <option>Atur Modal Harian</option>
+    </select>
+  </div>
+  <div class="field" id="iklan-modal-harian-field" style="display: none;">
+    <label>Modal Harian (Buat Baru)</label>
+    <input id="iklan-modal-harian" type="number" value="60000" />
+  </div>
+  <div class="field" id="iklan-penambahan-modal-field" style="display: none;">
+    <label>Penambahan Modal (Top Up)</label>
+    <input id="iklan-penambahan-modal" type="number" value="5000" />
+  </div>
+</div>
+<div class="field">
+  <label>Interval (detik)</label>
+  <input type="number" id="iklan-interval" value="3600" min="60" />
+</div>
+<div class="btn-row" style="margin-top:1rem">
+  <button class="btn btn-primary btn-add-task-partial" data-task="iklan_live">Add Iklan Task</button>
+  <button class="btn btn-run-once-partial" data-task="iklan_live">Run once now</button>
+</div>
