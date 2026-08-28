@@ -12,7 +12,7 @@
     refImages: {},
   };
 
-
+  const num = (val, def) => { const v = parseInt(val, 10); return isNaN(v) ? def : v; };
   function updateDeviceHeaders() {
     const devLabel = $("input-device").value ? `(${$("input-device").value})` : "";
     if ($("header-dev-1")) $("header-dev-1").textContent = devLabel;
