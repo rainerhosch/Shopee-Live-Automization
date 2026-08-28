@@ -46,16 +46,34 @@
 
   function appendLog(entry, clear = false) {
     const box = $("log-box");
-    if (clear) box.innerHTML = "";
+    const feed = $("mock-feed-list");
+    if (clear && box) box.innerHTML = "";
     const line = document.createElement("div");
     const level = entry.level || "info";
     line.className = `log-line ${level}`;
     const ts = (entry.ts || "").replace("T", " ").replace("Z", "");
-    line.innerHTML = `<span class="ts">${ts}</span> <span class="lvl">[${level}]</span> ${escapeHtml(
-      entry.message || ""
-    )}`;
-    box.appendChild(line);
-    box.scrollTop = box.scrollHeight;
+    const msg = escapeHtml(entry.message || "");
+
+    if (box) {
+      line.innerHTML = `<span class="ts">${ts}</span> <span class="lvl">[${level}]</span> ${msg}`;
+      box.appendChild(line);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    if (feed) {
+      const timeOnly = ts.split(" ")[1] || ts;
+      const feedItem = document.createElement("div");
+      feedItem.className = "feed-item";
+      feedItem.innerHTML = `
+        <div class="feed-time">${timeOnly}</div>
+        <div class="feed-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></div>
+        <div class="feed-content">
+          <strong>[${level.toUpperCase()}]</strong> ${msg}
+        </div>
+      `;
+      feed.insertBefore(feedItem, feed.firstChild);
+      if (feed.children.length > 50) feed.removeChild(feed.lastChild);
+    }
   }
 
   function escapeHtml(s) {
@@ -106,7 +124,7 @@
     const btnClearLogs = document.getElementById("btn-clear-logs");
 
     const btnCalExport = document.getElementById("btn-cal-export");
-    
+
     const list = $("device-list");
     try {
       const data = await api("/api/devices");
@@ -150,8 +168,9 @@
     const dev = encodeURIComponent($("input-device").value.trim());
     state.bot = await api(`/api/bot?device=${dev}`);
     updateBadges();
-    $("bot-summary").textContent = `Status: ${state.bot.status} · device: ${state.bot.device || "-"
-      } · profile: ${state.bot.profile} · dry_run: ${state.bot.dry_run}`;
+    if ($("bot-summary")) {
+      $("bot-summary").textContent = `Status: ${state.bot.status} · device: ${state.bot.device || "-"} · profile: ${state.bot.profile} · dry_run: ${state.bot.dry_run}`;
+    }
     renderTasks(state.bot.tasks || []);
     renderQueue(state.bot.queue || [], state.bot.active_task);
   }
@@ -182,15 +201,18 @@
 
   function renderQueue(queue, activeTask) {
     const activeLabel = $("active-task-label");
-    if (activeTask) {
-      activeLabel.innerHTML = `<strong>${escapeHtml(activeTask.type)}</strong> <span>(${escapeHtml(activeTask.id)})</span>`;
-      activeLabel.style.color = "var(--ok)";
-    } else {
-      activeLabel.innerHTML = "None";
-      activeLabel.style.color = "inherit";
+    if (activeLabel) {
+      if (activeTask) {
+        activeLabel.innerHTML = `<strong>${escapeHtml(activeTask.type)}</strong> <span>(${escapeHtml(activeTask.id)})</span>`;
+        activeLabel.style.color = "var(--ok)";
+      } else {
+        activeLabel.innerHTML = "None";
+        activeLabel.style.color = "inherit";
+      }
     }
 
     const el = $("queue-list");
+    if (!el) return;
     if (!queue.length) {
       el.innerHTML = `<div class="muted">Queue empty.</div>`;
       return;
@@ -210,7 +232,7 @@
         </div>`;
       el.appendChild(card);
     });
-    
+
     el.querySelectorAll("[data-del-q]").forEach((btn) => {
       btn.onclick = async () => {
         const dev = encodeURIComponent($("input-device").value.trim());
@@ -222,6 +244,7 @@
 
   function renderTasks(tasks) {
     const el = $("task-list");
+    if (!el) return;
     if (!tasks.length) {
       el.innerHTML = `<div class="muted">No tasks yet.</div>`;
       return;
@@ -247,7 +270,7 @@
         </div>`;
       el.appendChild(card);
     });
-    
+
     el.querySelectorAll("[data-del]").forEach((btn) => {
       btn.onclick = async () => {
         const dev = encodeURIComponent($("input-device").value.trim());
@@ -259,7 +282,7 @@
       btn.onclick = async () => {
         const id = btn.dataset.id;
         const act = btn.dataset.action;
-        
+
         if (act === "run-now") {
           const task = tasks.find(x => x.id === id);
           if (!task) return;
@@ -285,7 +308,7 @@
         if (act === "start") patch = { enabled: true };
         else if (act === "pause") patch = { enabled: false };
         else if (act === "stop") patch = { enabled: false, run_count: 0 };
-        
+
         await api(`/api/tasks/${id}?device=${encodeURIComponent($("input-device").value.trim())}`, {
           method: "PATCH",
           body: JSON.stringify(patch),
@@ -295,10 +318,38 @@
     });
   }
 
-  function currentTaskPayload() {
-    const type = state.activeTab;
+  window.handleTaskAction = async function (action, taskType) {
+    const payload = window.currentTaskPayload(taskType);
+    if (payload.params && payload.params.judul === null) delete payload.params.judul;
+
+    try {
+      const dev = encodeURIComponent($("input-device").value.trim());
+
+      if (action === 'add') {
+        await api(`/api/tasks?device=${dev}`, { method: "POST", body: JSON.stringify({ ...payload, enabled: true }) });
+      } else if (action === 'run') {
+        await api("/api/tasks/run-once", {
+          method: "POST",
+          body: JSON.stringify({
+            type: payload.type,
+            device_serial: dev,
+            params: payload.params,
+          }),
+        });
+      }
+      refreshBot();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  window.currentTaskPayload = function (type) {
+    type = type || state.activeTab;
+    const operator = document.querySelector('.operator-input') ? document.querySelector('.operator-input').value.trim() : null;
+
+    let result = {};
     if (type === "lelang") {
-      return {
+      result = {
         type,
         interval_sec: num($("lelang-interval").value, 300),
         params: {
@@ -311,9 +362,8 @@
           batas_waktu: $("lelang-batas").value,
         },
       };
-    }
-    if (type === "iklan_live") {
-      return {
+    } else if (type === "iklan_live") {
+      result = {
         type,
         interval_sec: num($("iklan-interval").value, 600),
         params: {
@@ -327,9 +377,8 @@
           penambahan_modal: num($("iklan-penambahan-modal").value, 5000),
         },
       };
-    }
-    if (type === "bonus_koin") {
-      return {
+    } else if (type === "bonus_koin") {
+      result = {
         type,
         interval_sec: num($("bonus-interval").value, 1200),
         params: {
@@ -337,24 +386,288 @@
           koin_per_klaim: num($("bonus-claim").value, 100),
         },
       };
-    }
-    if (type === "hujan_bonus") {
-      return {
+    } else if (type === "hujan_bonus") {
+      result = {
         type,
         interval_sec: num($("hujan-interval").value, 600),
         params: { koin_dibagikan: num($("hujan-koin").value, 255) },
       };
+    } else {
+      result = {
+        type: "open_shopee",
+        interval_sec: num($("open-interval") ? $("open-interval").value : 3600, 3600),
+        params: {},
+      };
     }
-    return {
-      type: "open_shopee",
-      interval_sec: num($("open-interval").value, 3600),
-      params: {},
+
+    if (operator) result.params.operator = operator;
+    return result;
+  }
+
+  function placeCrosshair(xPct, yPct) {
+    const img = $("ref-image");
+    const cross = $("ref-crosshair");
+    if (!img.complete || !img.naturalWidth) {
+      cross.style.display = "none";
+      return;
+    }
+    const rect = img.getBoundingClientRect();
+    const frame = $("ref-frame").getBoundingClientRect();
+    const left = rect.left - frame.left + (rect.width * xPct) / 100;
+    const top = rect.top - frame.top + (rect.height * yPct) / 100;
+    cross.style.display = "block";
+    cross.style.left = `${left}px`;
+    cross.style.top = `${top}px`;
+  }
+
+  function onRefClick(ev) {
+    const img = $("ref-image");
+    const rect = img.getBoundingClientRect();
+    if (ev.clientX < rect.left || ev.clientX > rect.right || ev.clientY < rect.top || ev.clientY > rect.bottom) {
+      return;
+    }
+    const x = ((ev.clientX - rect.left) / rect.width) * 100;
+    const y = ((ev.clientY - rect.top) / rect.height) * 100;
+    $("cal-x").value = x.toFixed(1);
+    $("cal-y").value = y.toFixed(1);
+    placeCrosshair(x, y);
+  }
+
+  async function saveCalPoint(testTap) {
+    const profile = $("select-profile").value || "admin_live";
+    const key = $("cal-key").value;
+    if (!key) return alert("Select a checklist point first");
+    const x = $("cal-x").value;
+    const y = $("cal-y").value;
+    const device = $("input-device").value.trim();
+    const deviceParam = device ? `?device=${encodeURIComponent(device)}` : "";
+    const body = {
+      key,
+      x,
+      y,
+      label: $("cal-label").value,
+      test_tap: !!testTap,
+      device: device || null,
+    };
+    try {
+      await api(`/api/profiles/${encodeURIComponent(profile)}/points${deviceParam}`, {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+      // Bind device serial into profile meta on first save
+      if (device) {
+        await api(`/api/profiles/${encodeURIComponent(profile)}`, {
+          method: "PATCH",
+          body: JSON.stringify({ device_serial: device }),
+        });
+      }
+      await loadCalibration();
+      // Advance to next uncalibrated
+      const next = (state.calibration.items || []).find((i) => !i.calibrated);
+      if (next) selectCalPoint(next.key);
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  async function testTapOnly() {
+    const device = $("input-device").value.trim();
+    if (!device) return alert("Select a device first");
+    try {
+      await api("/api/tap", {
+        method: "POST",
+        body: JSON.stringify({
+          device,
+          x: $("cal-x").value,
+          y: $("cal-y").value,
+          dry_run: $("select-dry").value === "true",
+        }),
+      });
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  // ---- Events ----
+  function bind() {
+
+
+    if ($("task-tabs")) $("task-tabs").addEventListener("click", (e) => {
+      const tab = e.target.closest(".tab");
+      if (!tab) return;
+      state.activeTab = tab.dataset.tab;
+      [...$("task-tabs").children].forEach((t) => t.classList.toggle("active", t === tab));
+      document.querySelectorAll(".task-form").forEach((f) => f.classList.add("hidden"));
+      $(`form-${state.activeTab}`).classList.remove("hidden");
+    });
+
+    $("btn-refresh-devices").onclick = () => refreshDevices();
+    $("btn-reconnect").onclick = async () => {
+      await api("/api/panda/reconnect", { method: "POST" });
+      refreshDevices();
+    };
+
+    $("btn-save-settings").onclick = async () => {
+      try {
+        await api("/api/settings", {
+          method: "PUT",
+          body: JSON.stringify({
+            connection_mode: $("select-conn-mode").value,
+            adb_path: $("input-adb-path").value.trim() || undefined,
+            panda_url: $("input-panda-url").value.trim() || undefined,
+            default_device: $("input-device").value.trim(),
+            default_profile: $("select-profile").value,
+            dry_run: $("select-dry").value === "true",
+            step_delay_ms: num($("input-delay").value, 600),
+          }),
+        });
+        await refreshSettings();
+        alert("Settings saved");
+      } catch (err) {
+        alert(err.message);
+      }
+    };
+
+    $("select-dry").onchange = updateBadges;
+    $("select-profile").onchange = () => loadCalibration();
+    $("select-conn-mode").onchange = updateConnModeUI;
+
+    if ($("btn-start")) $("btn-start").onclick = async () => {
+      try {
+        await api("/api/bot/control", {
+          method: "POST",
+          body: JSON.stringify({
+            action: "start",
+            device: $("input-device").value.trim(),
+            profile: $("select-profile").value,
+            dry_run: $("select-dry").value === "true",
+          }),
+        });
+        refreshBot();
+      } catch (err) {
+        alert(err.message);
+      }
+    };
+    if ($("btn-pause")) $("btn-pause").onclick = async () => {
+      await api("/api/bot/control", { method: "POST", body: JSON.stringify({ action: "pause" }) });
+      refreshBot();
+    };
+    if ($("btn-stop")) $("btn-stop").onclick = async () => {
+      await api("/api/bot/control", { method: "POST", body: JSON.stringify({ action: "stop" }) });
+      refreshBot();
+    };
+
+    if ($("btn-add-task")) $("btn-add-task").onclick = async () => {
+      const payload = currentTaskPayload();
+      // strip null judul
+      if (payload.params && payload.params.judul === null) delete payload.params.judul;
+      try {
+        const dev = encodeURIComponent($("input-device").value.trim());
+        await api(`/api/tasks?device=${dev}`, { method: "POST", body: JSON.stringify({ ...payload, enabled: true }) });
+        refreshBot();
+      } catch (err) {
+        alert(err.message);
+      }
+    };
+
+    if ($("btn-run-once")) $("btn-run-once").onclick = async () => {
+      const payload = currentTaskPayload();
+      if (payload.params && payload.params.judul === null) delete payload.params.judul;
+      try {
+        await api("/api/tasks/run-once", {
+          method: "POST",
+          body: JSON.stringify({
+            type: payload.type,
+            params: payload.params,
+            device: $("input-device").value.trim() || null,
+            profile: $("select-profile").value,
+            dry_run: $("select-dry").value === "true",
+          }),
+        });
+      } catch (err) {
+        alert(err.message);
+      }
+    };
+
+    if ($("btn-clear-tasks")) $("btn-clear-tasks").onclick = async () => {
+      if (!confirm("Clear all scheduled tasks?")) return;
+      const dev = encodeURIComponent($("input-device").value.trim());
+      await api(`/api/tasks?device=${dev}`, { method: "DELETE" });
+      refreshBot();
+    };
+
+    if ($("btn-clear-queue")) $("btn-clear-queue").onclick = async () => {
+      if (!confirm("Clear execution queue?")) return;
+      const dev = encodeURIComponent($("input-device").value.trim());
+      await api(`/api/queue?device=${dev}`, { method: "DELETE" });
+      refreshBot();
+    };
+
+    if ($("btn-clear-logs")) $("btn-clear-logs").onclick = () => {
+      $("log-box").innerHTML = "";
+    };
+
+    $("btn-cal-export").onclick = () => {
+      const profile = $("select-profile").value || "admin_live";
+      const deviceParam = $("input-device").value ? `?device=${encodeURIComponent($("input-device").value.trim())}` : "";
+      window.open(`/api/profiles/${encodeURIComponent(profile)}/export${deviceParam}`, "_blank");
+    };
+
+    $("file-import").onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const profile = $("select-profile").value || "admin_live";
+      const deviceParam = $("input-device").value ? `?device=${encodeURIComponent($("input-device").value.trim())}` : "";
+      const formData = new FormData();
+      formData.append("file", file);
+      try {
+        const res = await fetch(`/api/profiles/${encodeURIComponent(profile)}/import${deviceParam}`, {
+          method: "POST",
+          body: formData,
+        });
+        if (!res.ok) throw new Error(await res.text());
+        alert("Calibration imported successfully!");
+        loadCalibration();
+      } catch (err) {
+        alert("Import failed: " + err.message);
+      }
+      e.target.value = "";
+    };
+
+    $("cal-group").onchange = () => {
+      updateRefImage();
+    };
+    $("ref-image").onclick = onRefClick;
+    $("ref-image").onload = () => {
+      placeCrosshair(Number($("cal-x").value || 0), Number($("cal-y").value || 0));
+    };
+    window.addEventListener("resize", () => {
+      placeCrosshair(Number($("cal-x").value || 0), Number($("cal-y").value || 0));
+    });
+    $("btn-cal-save").onclick = () => saveCalPoint(false);
+    $("btn-cal-save-tap").onclick = () => saveCalPoint(true);
+    $("btn-cal-test-only").onclick = () => testTapOnly();
+    $("btn-cal-capture").onclick = () => {
+      const dev = $("input-device").value.trim() || state.settings.default_device;
+      if (!dev) return alert("No default device selected.");
+      const img = $("ref-image");
+      img.src = `/api/screen?device=${encodeURIComponent(dev)}&t=${Date.now()}`;
+      img.style.display = "block";
+      $("cal-hint").textContent = "Menampilkan Live Capture ADB. Silakan klik pada gambar untuk mendapatkan kordinat.";
     };
   }
 
-  function num(v, fallback) {
-    const n = Number(v);
-    return Number.isFinite(n) ? n : fallback;
+  function connectLogs() {
+    const proto = location.protocol === "https:" ? "wss" : "ws";
+    const ws = new WebSocket(`${proto}://${location.host}/ws/logs`);
+    ws.onmessage = (ev) => {
+      try {
+        appendLog(JSON.parse(ev.data));
+      } catch {
+        /* ignore */
+      }
+    };
+    ws.onclose = () => setTimeout(connectLogs, 1500);
   }
 
   // ---- Calibration ----
@@ -385,7 +698,7 @@
       btn.innerHTML = `
         <div class="name">${escapeHtml(item.label)}</div>
         <div class="status ${item.calibrated ? "done" : ""}">${item.calibrated ? "done" : "todo"}</div>
-        <div class="coords">${escapeHtml(item.key)} · ${item.x}%, ${item.y}%</div>`;
+        <div class="coords">${escapeHtml(item.key)} ┬╖ ${item.x}%, ${item.y}%</div>`;
       btn.onclick = () => selectCalPoint(item.key);
       box.appendChild(btn);
     });
@@ -504,187 +817,7 @@
     }
   }
 
-  // ---- Events ----
-  function bind() {
 
-
-    $("task-tabs").addEventListener("click", (e) => {
-      const tab = e.target.closest(".tab");
-      if (!tab) return;
-      state.activeTab = tab.dataset.tab;
-      [...$("task-tabs").children].forEach((t) => t.classList.toggle("active", t === tab));
-      document.querySelectorAll(".task-form").forEach((f) => f.classList.add("hidden"));
-      $(`form-${state.activeTab}`).classList.remove("hidden");
-    });
-
-    $("btn-refresh-devices").onclick = () => refreshDevices();
-    $("btn-reconnect").onclick = async () => {
-      await api("/api/panda/reconnect", { method: "POST" });
-      refreshDevices();
-    };
-
-    $("btn-save-settings").onclick = async () => {
-      try {
-        await api("/api/settings", {
-          method: "PUT",
-          body: JSON.stringify({
-            connection_mode: $("select-conn-mode").value,
-            adb_path: $("input-adb-path").value.trim() || undefined,
-            panda_url: $("input-panda-url").value.trim() || undefined,
-            default_device: $("input-device").value.trim(),
-            default_profile: $("select-profile").value,
-            dry_run: $("select-dry").value === "true",
-            step_delay_ms: num($("input-delay").value, 600),
-          }),
-        });
-        await refreshSettings();
-        alert("Settings saved");
-      } catch (err) {
-        alert(err.message);
-      }
-    };
-
-    $("select-dry").onchange = updateBadges;
-    $("select-profile").onchange = () => loadCalibration();
-    $("select-conn-mode").onchange = updateConnModeUI;
-
-    $("btn-start").onclick = async () => {
-      try {
-        await api("/api/bot/control", {
-          method: "POST",
-          body: JSON.stringify({
-            action: "start",
-            device: $("input-device").value.trim(),
-            profile: $("select-profile").value,
-            dry_run: $("select-dry").value === "true",
-          }),
-        });
-        refreshBot();
-      } catch (err) {
-        alert(err.message);
-      }
-    };
-    $("btn-pause").onclick = async () => {
-      await api("/api/bot/control", { method: "POST", body: JSON.stringify({ action: "pause" }) });
-      refreshBot();
-    };
-    $("btn-stop").onclick = async () => {
-      await api("/api/bot/control", { method: "POST", body: JSON.stringify({ action: "stop" }) });
-      refreshBot();
-    };
-
-    $("btn-add-task").onclick = async () => {
-      const payload = currentTaskPayload();
-      // strip null judul
-      if (payload.params && payload.params.judul === null) delete payload.params.judul;
-      try {
-        const dev = encodeURIComponent($("input-device").value.trim());
-        await api(`/api/tasks?device=${dev}`, { method: "POST", body: JSON.stringify({ ...payload, enabled: true }) });
-        refreshBot();
-      } catch (err) {
-        alert(err.message);
-      }
-    };
-
-    $("btn-run-once").onclick = async () => {
-      const payload = currentTaskPayload();
-      if (payload.params && payload.params.judul === null) delete payload.params.judul;
-      try {
-        await api("/api/tasks/run-once", {
-          method: "POST",
-          body: JSON.stringify({
-            type: payload.type,
-            params: payload.params,
-            device: $("input-device").value.trim() || null,
-            profile: $("select-profile").value,
-            dry_run: $("select-dry").value === "true",
-          }),
-        });
-      } catch (err) {
-        alert(err.message);
-      }
-    };
-
-    $("btn-clear-tasks").onclick = async () => {
-      if (!confirm("Clear all scheduled tasks?")) return;
-      const dev = encodeURIComponent($("input-device").value.trim());
-      await api(`/api/tasks?device=${dev}`, { method: "DELETE" });
-      refreshBot();
-    };
-
-    $("btn-clear-queue").onclick = async () => {
-      if (!confirm("Clear execution queue?")) return;
-      const dev = encodeURIComponent($("input-device").value.trim());
-      await api(`/api/queue?device=${dev}`, { method: "DELETE" });
-      refreshBot();
-    };
-
-    $("btn-clear-logs").onclick = () => {
-      $("log-box").innerHTML = "";
-    };
-
-    $("btn-cal-export").onclick = () => {
-      const profile = $("select-profile").value || "admin_live";
-      const deviceParam = $("input-device").value ? `?device=${encodeURIComponent($("input-device").value.trim())}` : "";
-      window.open(`/api/profiles/${encodeURIComponent(profile)}/export${deviceParam}`, "_blank");
-    };
-
-    $("file-import").onchange = async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const profile = $("select-profile").value || "admin_live";
-      const deviceParam = $("input-device").value ? `?device=${encodeURIComponent($("input-device").value.trim())}` : "";
-      const formData = new FormData();
-      formData.append("file", file);
-      try {
-        const res = await fetch(`/api/profiles/${encodeURIComponent(profile)}/import${deviceParam}`, {
-          method: "POST",
-          body: formData,
-        });
-        if (!res.ok) throw new Error(await res.text());
-        alert("Calibration imported successfully!");
-        loadCalibration();
-      } catch (err) {
-        alert("Import failed: " + err.message);
-      }
-      e.target.value = "";
-    };
-
-    $("cal-group").onchange = () => {
-      updateRefImage();
-    };
-    $("ref-image").onclick = onRefClick;
-    $("ref-image").onload = () => {
-      placeCrosshair(Number($("cal-x").value || 0), Number($("cal-y").value || 0));
-    };
-    window.addEventListener("resize", () => {
-      placeCrosshair(Number($("cal-x").value || 0), Number($("cal-y").value || 0));
-    });
-    $("btn-cal-save").onclick = () => saveCalPoint(false);
-    $("btn-cal-save-tap").onclick = () => saveCalPoint(true);
-    $("btn-cal-test-only").onclick = () => testTapOnly();
-    $("btn-cal-capture").onclick = () => {
-      const dev = $("input-device").value.trim() || state.settings.default_device;
-      if (!dev) return alert("No default device selected.");
-      const img = $("ref-image");
-      img.src = `/api/screen?device=${encodeURIComponent(dev)}&t=${Date.now()}`;
-      img.style.display = "block";
-      $("cal-hint").textContent = "Menampilkan Live Capture ADB. Silakan klik pada gambar untuk mendapatkan kordinat.";
-    };
-  }
-
-  function connectLogs() {
-    const proto = location.protocol === "https:" ? "wss" : "ws";
-    const ws = new WebSocket(`${proto}://${location.host}/ws/logs`);
-    ws.onmessage = (ev) => {
-      try {
-        appendLog(JSON.parse(ev.data));
-      } catch {
-        /* ignore */
-      }
-    };
-    ws.onclose = () => setTimeout(connectLogs, 1500);
-  }
 
   async function init() {
     bind();
@@ -705,61 +838,39 @@
     appendLog({ level: "error", message: String(err), ts: new Date().toISOString() });
   });
 
-  // SIDEBAR ROUTING LOGIC
-  document.querySelectorAll(".nav-item[data-view]").forEach(btn => {
-    btn.onclick = () => {
-      // Update active nav
-      document.querySelectorAll(".nav-item[data-view]").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      
-      // Hide all views
-      document.querySelectorAll(".view-panel").forEach(v => v.classList.add("hidden"));
-      
-      // Show selected view
-      const viewId = "view-" + btn.dataset.view;
-      const viewEl = document.getElementById(viewId);
-      if (viewEl) viewEl.classList.remove("hidden");
-      
-      // Stop or Start monitoring loop
-      if (btn.dataset.view === "monitor") {
-        startMonitorLoop();
-      } else {
-        stopMonitorLoop();
-      }
-    };
-  });
+
 
   // MONITORING LOGIC
   let monitorInterval = null;
-  
+
   async function refreshMonitor() {
     try {
       const bots = await api("/api/bots");
       const grid = document.getElementById("monitor-grid");
       grid.innerHTML = "";
-      
+
       const devices = state.devices || [];
-      
+
       if (Object.keys(bots).length === 0 && devices.length === 0) {
         grid.innerHTML = "<div class='muted'>No devices connected.</div>";
         return;
       }
-      
+
       // Merge known devices and bot states
       const allSerials = new Set([...devices.map(d => d.serial), ...Object.keys(bots)]);
-      
+
       allSerials.forEach(serial => {
         const d = devices.find(x => x.serial === serial) || {};
         const b = bots[serial] || { status: "offline", queue_length: 0, active_task: null };
-        
+
         const devName = d.name || (d.brand && d.brand !== "Unknown" ? `${d.brand} ${d.model}` : d.model) || serial;
-        
+
         const card = document.createElement("div");
         card.className = "monitor-card";
-        
+
         const isRunning = b.status === "running";
         const statusColor = isRunning ? "var(--ok)" : b.status === "paused" ? "var(--warn)" : "var(--fg)";
-        
+
         card.innerHTML = `
           <header>
             <span class="device-title">${escapeHtml(devName)}</span>
@@ -771,40 +882,40 @@
           </div>
           <div class="queue-info">Queue: ${b.queue_length} tasks</div>
         `;
-        
+
         // Clicking a card navigates to config view and selects the device
         card.onclick = () => {
           // Select this device
           $("input-device").value = serial;
           updateDeviceHeaders();
-          
+
           // Switch to config view
           document.querySelector('.nav-item[data-view="config"]').click();
-          
+
           // Trigger device select visual update
           document.querySelectorAll('.device-item').forEach(c => {
-             c.classList.remove('active');
-             if (c.textContent.includes(serial)) c.classList.add('active');
+            c.classList.remove('active');
+            if (c.textContent.includes(serial)) c.classList.add('active');
           });
           refreshBot();
           refreshTasks();
         };
-        
+
         grid.appendChild(card);
       });
-      
+
     } catch (err) {
       console.error("Monitor refresh failed", err);
     }
   }
-  
+
   function startMonitorLoop() {
     refreshMonitor();
     if (!monitorInterval) {
       monitorInterval = setInterval(refreshMonitor, 2000);
     }
   }
-  
+
   function stopMonitorLoop() {
     if (monitorInterval) {
       clearInterval(monitorInterval);
@@ -813,16 +924,235 @@
   }
 
   // Init monitor if active tab is monitor
-  if (document.querySelector('.nav-item.active').dataset.view === "monitor") {
+  const activeView = document.querySelector('.nav-item.active').dataset.view;
+  if (activeView === "monitor") {
     startMonitorLoop();
+  } else if (activeView === "dashboard_new") {
+    renderModernDashboard();
   }
 
-})();
 
-  // SIDEBAR TOGGLE
-  const btnToggle = document.getElementById('btn-toggle-sidebar');
-  if (btnToggle) {
-    btnToggle.onclick = () => {
-      document.getElementById('app-sidebar').classList.toggle('collapsed');
+// SIDEBAR TOGGLE
+const btnToggle = document.getElementById('btn-toggle-sidebar');
+if (btnToggle) {
+  btnToggle.onclick = () => {
+    document.getElementById('app-sidebar').classList.toggle('collapsed');
+  };
+}
+
+// ========================================== //
+// HOSTAR DASHBOARD MODERN (MOCK DATA)        //
+// ========================================== //
+
+function renderModernDashboard() {
+  api("/api/bots").then(bots => {
+    const devices = state.devices || [];
+
+    let totalConnected = devices.length;
+    let liveCount = 0;
+    let idleCount = 0;
+    let errorCount = 0;
+
+    const allSerials = new Set([...devices.map(d => d.serial), ...Object.keys(bots)]);
+
+    let gridHtml = "";
+    let tableHtml = "";
+    let hasAnyTask = false;
+
+    if (allSerials.size === 0) {
+      gridHtml = '<div class="muted">Belum ada device yang terhubung.</div>';
+    }
+
+    allSerials.forEach(serial => {
+      const d = devices.find(x => x.serial === serial) || {};
+      const b = bots[serial] || { status: "offline", tasks: [] };
+      const devName = d.name || (d.brand && d.brand !== "Unknown" ? `${d.brand} ${d.model}` : d.model) || serial;
+
+      if (b.status === "running") liveCount++;
+      else if (b.status === "paused" || b.status === "stopped") idleCount++;
+
+      let devHasError = false;
+      let tasksHtml = "";
+
+      (b.tasks || []).forEach(t => {
+        hasAnyTask = true;
+        if (t.last_error) devHasError = true;
+
+        let cls = 'idle';
+        let label = 'IDLE';
+        if (t.last_error) { cls = 'error'; label = 'ERROR'; }
+        else if (b.status === 'running' && t.enabled) { cls = 'live'; label = 'LIVE'; }
+        else if (b.status === 'paused' || !t.enabled) { cls = 'pause'; label = 'PAUSE'; }
+
+        let bid = cls === 'idle' || cls === 'error' ? '-' : "Rp " + (Math.floor(Math.random() * 300) + 50) + "K";
+        let next = cls === 'idle' || cls === 'error' ? '-' : "Rp " + (Math.floor(Math.random() * 300) + 50) + "K";
+        let eta = cls === 'idle' || cls === 'error' ? '--:--' : `00:${String(Math.floor(Math.random() * 59)).padStart(2, '0')}`;
+        let op = t.params.operator || "Auto";
+        let prod = t.type.toUpperCase() + (t.params.judul ? " - " + t.params.judul : "");
+
+        tasksHtml += `
+          <div style="border-top: 1px solid var(--border); padding-top: 0.5rem; margin-top: 0.5rem;">
+            <div class="dc-product" style="font-size: 0.85rem; display:flex; justify-content:space-between; align-items:center;">
+              <strong>${escapeHtml(prod)}</strong>
+              <span class="badge-status ${cls}" style="font-size:0.65rem;">● ${label}</span>
+            </div>
+            <div class="dc-stats" style="grid-template-columns: 1fr 1fr 1fr; font-size: 0.75rem; margin-top:0.25rem;">
+              <div><span>Bid</span> <span class="text-green">${bid}</span></div>
+              <div><span>ETA</span> <span>${eta}</span></div>
+              <div><span>Op</span> <span>${escapeHtml(op)}</span></div>
+            </div>
+          </div>
+        `;
+
+        if (cls === 'live' && t.type === 'lelang') {
+          tableHtml += `
+            <tr>
+              <td><a href="#" class="t-dev">${escapeHtml(devName)}</a></td>
+              <td>${escapeHtml(prod)}</td>
+              <td><span class="badge-status live">● LIVE</span></td>
+              <td class="t-bid">${bid}</td>
+              <td>${eta}</td>
+              <td>${escapeHtml(op)}</td>
+            </tr>
+          `;
+        }
+      });
+
+      if (devHasError) errorCount++;
+
+      if (b.tasks && b.tasks.length > 0) {
+        let devStatusCls = b.status === "running" ? "live" : (b.status === "paused" ? "pause" : "idle");
+        gridHtml += `
+          <div class="device-card-modern">
+            <div class="dc-header">
+              <div>
+                <h4 class="dc-title">${escapeHtml(devName)}</h4>
+                <div class="dc-subtitle">${escapeHtml(d.brand || "Unknown")}</div>
+              </div>
+              <span class="badge-status ${devStatusCls}">● ${b.status.toUpperCase()}</span>
+            </div>
+            ${tasksHtml}
+          </div>
+        `;
+      }
+    });
+
+    if (!hasAnyTask && allSerials.size > 0) {
+      gridHtml = '<div class="muted">Device terhubung, namun belum ada tugas (task) yang dikonfigurasi.</div>';
+    }
+
+    const kpiValues = document.querySelectorAll('.kpi-value');
+    if (kpiValues.length >= 4) {
+      kpiValues[0].innerText = totalConnected;
+      kpiValues[1].innerText = liveCount;
+      kpiValues[2].innerText = idleCount;
+      kpiValues[3].innerText = errorCount;
+    }
+
+    const grid = document.getElementById("mock-device-grid");
+    const table = document.getElementById("mock-ticker-table");
+    if (grid) grid.innerHTML = gridHtml;
+    if (table) table.innerHTML = tableHtml || '<tr><td colspan="6" class="muted">Tidak ada lelang aktif</td></tr>';
+  }).catch(e => console.error("Error fetching bots for dashboard:", e));
+
+  setTimeout(() => {
+    if (window.Chart && !window.myActivityChart) {
+      const ctx = document.getElementById('activityChart');
+      if (ctx) {
+        window.myActivityChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: ['17:20', '17:50', '18:40', '19:20', '20:00', '20:40', '20:41', '20:43', '20:45'],
+            datasets: [
+              { label: 'Aktivitas Bid', data: [10, 15, 9, 14, 8, 15, 12, 10, 14], borderColor: '#3b82f6', tension: 0.4, borderWidth: 2 },
+              { label: 'Device LIVE', data: [13, 14, 13, 15, 14, 13, 15, 15, 15], borderColor: '#00b87c', tension: 0.4, borderWidth: 2 }
+            ]
+          },
+          options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#1e293b' } }, x: { grid: { color: '#1e293b' } } }, plugins: { legend: { display: false } } }
+        });
+      }
+    }
+  }, 500);
+}
+
+
+
+// Hook into view switching to render the mock data when New Dashboard is shown
+
+// Hook into view switching (Updated for Partials)
+const oldShowView = document.querySelectorAll(".nav-item[data-view]");
+oldShowView.forEach(btn => {
+  btn.onclick = (e) => {
+    // Hide all
+    document.querySelectorAll(".view-panel").forEach(v => v.classList.add("hidden"));
+    document.querySelectorAll(".nav-item[data-view]").forEach(b => b.classList.remove("active"));
+
+    // Show target
+    btn.classList.add("active");
+    const target = document.getElementById("view-" + btn.dataset.view);
+    if (target) target.classList.remove("hidden");
+
+    // Run mock renderer if it's the new dashboard
+    if (btn.dataset.view === "dashboard_new") {
+      renderModernDashboard();
+    }
+
+    // Load partial if data-partial exists (Task Creation)
+    if (btn.dataset.partial) {
+      const container = document.getElementById("dynamic-task-container");
+      const title = document.getElementById("task-form-title");
+      if (container) {
+        container.innerHTML = '<div class="muted">Loading ' + btn.dataset.partial + '...</div>';
+
+        // Update Title based on clicked menu text
+        const navText = btn.querySelector('.nav-text');
+        if (navText && title) {
+          // Keep the span for header-dev-1
+          const devSpan = title.querySelector('#header-dev-1');
+          title.innerHTML = 'Configure ' + navText.innerText;
+          if (devSpan) title.appendChild(devSpan);
+        }
+
+        fetch('/static/views/' + btn.dataset.partial)
+          .then(res => {
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            return res.text();
+          })
+          .then(html => {
+            container.innerHTML = html;
+            // Re-bind listeners for the newly injected buttons
+            bindPartialButtons();
+          })
+          .catch(err => {
+            container.innerHTML = '<div class="text-red">Gagal memuat komponen: ' + err.message + '</div>';
+          });
+      }
+    }
+  };
+});
+
+// Helper to bind events dynamically for the newly loaded forms
+function bindPartialButtons() {
+  const addBtn = document.querySelector('.btn-add-task-partial');
+  const runBtn = document.querySelector('.btn-run-once-partial');
+
+  if (addBtn) {
+    addBtn.onclick = () => {
+      const task = addBtn.dataset.task;
+      handleTaskAction('add', task);
     };
   }
+
+  if (runBtn) {
+    runBtn.onclick = () => {
+      const task = runBtn.dataset.task;
+      handleTaskAction('run', task);
+    };
+  }
+}
+
+// Re-route original handleTaskAction logic here if needed, or assume it's in the old code.
+// We just need to make sure handleTaskAction (or btn-add-task logic) exists globally.
+
+
+})();

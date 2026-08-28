@@ -1,0 +1,59 @@
+<div class="field-row">
+  <div class="field">
+    <label>Admin Live / Operator</label>
+    <input class="operator-input" placeholder="Nama Operator..." />
+  </div>
+</div>
+<div class="field">
+  <label>Judul Lelang</label>
+  <input id="lelang-judul" placeholder="Lelang1" required />
+</div>
+<div class="field-row" style="grid-template-columns: 1fr 1fr 1fr;">
+  <div class="field">
+    <label>Harga</label>
+    <input id="lelang-harga" placeholder="Contoh: 50000" required />
+  </div>
+  <div class="field">
+    <label>Kelipatan</label>
+    <input id="lelang-kelipatan-harga" type="number" placeholder="Contoh: 10000" />
+  </div>
+  <div class="field">
+    <label>Max Harga</label>
+    <input id="lelang-max-harga" type="number" placeholder="Contoh: 100000" />
+  </div>
+</div>
+<div class="field-row">
+  <div class="field">
+    <label>Mode Lelang</label>
+    <select id="lelang-mode">
+      <option>Tercepat</option>
+      <option>Acak</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>Peserta</label>
+    <select id="lelang-peserta">
+      <option>Semua Penonton</option>
+      <option>Hanya Pengikut</option>
+    </select>
+  </div>
+</div>
+<div class="field-row">
+  <div class="field">
+    <label>Batas Waktu</label>
+    <select id="lelang-batas">
+      <option>10dtk</option>
+      <option>30dtk</option>
+      <option>60dtk</option>
+      <option>120dtk</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>Interval (detik)</label>
+    <input type="number" id="lelang-interval" value="300" min="10" />
+  </div>
+</div>
+<div class="btn-row" style="margin-top:1rem">
+  <button class="btn btn-primary btn-add-task-partial" data-task="lelang">Add Lelang Task</button>
+  <button class="btn btn-run-once-partial" data-task="lelang">Run once now</button>
+</div>

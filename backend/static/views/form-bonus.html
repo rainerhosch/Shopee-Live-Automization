@@ -1,0 +1,26 @@
+<div class="field-row">
+  <div class="field">
+    <label>Admin Live / Operator</label>
+    <input class="operator-input" placeholder="Nama Operator..." />
+  </div>
+</div>
+<div class="field-row">
+  <div class="field">
+    <label>Untuk dibagikan</label>
+    <input type="number" id="bonus-bagi" value="25000" />
+  </div>
+  <div class="field">
+    <label>Koin per klaim</label>
+    <input type="number" id="bonus-claim" value="1000" />
+  </div>
+</div>
+<div class="field-row">
+  <div class="field">
+    <label>Interval (detik)</label>
+    <input type="number" id="bonus-interval" value="600" min="60" />
+  </div>
+</div>
+<div class="btn-row" style="margin-top:1rem">
+  <button class="btn btn-primary btn-add-task-partial" data-task="bonus_koin">Add Bonus Coin Task</button>
+  <button class="btn btn-run-once-partial" data-task="bonus_koin">Run once now</button>
+</div>
