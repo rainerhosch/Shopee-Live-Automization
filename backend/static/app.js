@@ -1060,7 +1060,7 @@
           if (t.manual) prod = "[Manual] " + prod;
 
           tasksHtml += `
-          <div style="border-top: 1px solid var(--border); padding-top: 0.4rem; margin-top: 0.4rem;">
+          <div class="task-card-clickable" data-serial="${serial}" data-type="${t.type}" style="border-top: 1px solid var(--border); padding-top: 0.4rem; margin-top: 0.4rem; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
             <div class="dc-product" style="display:flex; justify-content:space-between; align-items:center;">
               <strong>${escapeHtml(prod)}</strong>
               <span class="badge-status ${cls}">● ${label}</span>
@@ -1119,7 +1119,41 @@
 
       const grid = document.getElementById("mock-device-grid");
       const table = document.getElementById("mock-ticker-table");
-      if (grid) grid.innerHTML = gridHtml;
+      if (grid) {
+        grid.innerHTML = gridHtml;
+        
+        // Bind click events for task cards
+        grid.querySelectorAll('.task-card-clickable').forEach(card => {
+          card.onclick = () => {
+            const serial = card.getAttribute('data-serial');
+            const type = card.getAttribute('data-type');
+            
+            // 1. Select device
+            const deviceSelect = document.getElementById('input-device');
+            if (deviceSelect) {
+              deviceSelect.value = serial;
+              updateDeviceHeaders();
+            }
+            
+            // 2. Determine target partial
+            const typeMap = {
+              'lelang': 'form-lelang.html',
+              'iklan_live': 'form-iklan.html',
+              'bonus_coin': 'form-bonus.html',
+              'hujan_bonus': 'form-hujan.html'
+            };
+            const targetPartial = typeMap[type];
+            
+            if (targetPartial) {
+              // 3. Find and click the corresponding sidebar nav button
+              const navBtn = document.querySelector(`.nav-item[data-partial="${targetPartial}"]`);
+              if (navBtn) {
+                navBtn.click();
+              }
+            }
+          };
+        });
+      }
       if (table) table.innerHTML = tableHtml || '<tr><td colspan="6" class="muted">Tidak ada lelang aktif</td></tr>';
     }).catch(e => console.error("Error fetching bots for dashboard:", e));
 
