@@ -932,65 +932,65 @@
   }
 
 
-// SIDEBAR TOGGLE
-const btnToggle = document.getElementById('btn-toggle-sidebar');
-if (btnToggle) {
-  btnToggle.onclick = () => {
-    document.getElementById('app-sidebar').classList.toggle('collapsed');
-  };
-}
+  // SIDEBAR TOGGLE
+  const btnToggle = document.getElementById('btn-toggle-sidebar');
+  if (btnToggle) {
+    btnToggle.onclick = () => {
+      document.getElementById('app-sidebar').classList.toggle('collapsed');
+    };
+  }
 
-// ========================================== //
-// HOSTAR DASHBOARD MODERN (MOCK DATA)        //
-// ========================================== //
+  // ========================================== //
+  // HOSTAR DASHBOARD MODERN (MOCK DATA)        //
+  // ========================================== //
 
-function renderModernDashboard() {
-  api("/api/bots").then(bots => {
-    const devices = state.devices || [];
+  function renderModernDashboard() {
+    api("/api/bots").then(bots => {
+      const devices = state.devices || [];
 
-    let totalConnected = devices.length;
-    let liveCount = 0;
-    let idleCount = 0;
-    let errorCount = 0;
+      let totalConnected = devices.length;
+      let liveCount = 0;
+      let idleCount = 0;
+      let errorCount = 0;
 
-    const allSerials = new Set([...devices.map(d => d.serial), ...Object.keys(bots)]);
+      const allSerials = new Set([...devices.map(d => d.serial), ...Object.keys(bots)]);
 
-    let gridHtml = "";
-    let tableHtml = "";
-    let hasAnyTask = false;
+      let gridHtml = "";
+      let tableHtml = "";
+      let hasAnyTask = false;
 
-    if (allSerials.size === 0) {
-      gridHtml = '<div class="muted">Belum ada device yang terhubung.</div>';
-    }
+      if (allSerials.size === 0) {
+        gridHtml = '<div class="muted">Belum ada device yang terhubung.</div>';
+      }
 
-    allSerials.forEach(serial => {
-      const d = devices.find(x => x.serial === serial) || {};
-      const b = bots[serial] || { status: "offline", tasks: [] };
-      const devName = d.name || (d.brand && d.brand !== "Unknown" ? `${d.brand} ${d.model}` : d.model) || serial;
+      allSerials.forEach(serial => {
+        const d = devices.find(x => x.serial === serial) || {};
+        const b = bots[serial] || { status: "offline", tasks: [] };
+        const devName = d.name || (d.brand && d.brand !== "Unknown" ? `${d.brand} ${d.model}` : d.model) || serial;
 
-      if (b.status === "running") liveCount++;
-      else if (b.status === "paused" || b.status === "stopped") idleCount++;
+        if (b.status === "running") liveCount++;
+        else if (b.status === "paused" || b.status === "stopped") idleCount++;
 
-      let devHasError = false;
-      let tasksHtml = "";
+        let devHasError = false;
+        let tasksHtml = "";
 
-      (b.tasks || []).forEach(t => {
-        hasAnyTask = true;
-        if (t.last_error) devHasError = true;
+        (b.tasks || []).forEach(t => {
+          hasAnyTask = true;
+          if (t.last_error) devHasError = true;
 
-        let cls = 'idle';
-        let label = 'IDLE';
-        if (t.last_error) { cls = 'error'; label = 'ERROR'; }
-        else if (b.status === 'running' && t.enabled) { cls = 'live'; label = 'LIVE'; }
-        else if (b.status === 'paused' || !t.enabled) { cls = 'pause'; label = 'PAUSE'; }
+          let cls = 'idle';
+          let label = 'IDLE';
+          if (t.last_error) { cls = 'error'; label = 'ERROR'; }
+          else if (b.status === 'running' && t.enabled) { cls = 'live'; label = 'LIVE'; }
+          else if (b.status === 'paused' || !t.enabled) { cls = 'pause'; label = 'PAUSE'; }
 
-        let bid = cls === 'idle' || cls === 'error' ? '-' : "Rp " + (Math.floor(Math.random() * 300) + 50) + "K";
-        let next = cls === 'idle' || cls === 'error' ? '-' : "Rp " + (Math.floor(Math.random() * 300) + 50) + "K";
-        let eta = cls === 'idle' || cls === 'error' ? '--:--' : `00:${String(Math.floor(Math.random() * 59)).padStart(2, '0')}`;
-        let op = t.params.operator || "Auto";
-        let prod = t.type.toUpperCase() + (t.params.judul ? " - " + t.params.judul : "");
+          let bid = cls === 'idle' || cls === 'error' ? '-' : "Rp " + (Math.floor(Math.random() * 300) + 50) + "K";
+          let next = cls === 'idle' || cls === 'error' ? '-' : "Rp " + (Math.floor(Math.random() * 300) + 50) + "K";
+          let eta = cls === 'idle' || cls === 'error' ? '--:--' : `00:${String(Math.floor(Math.random() * 59)).padStart(2, '0')}`;
+          let op = t.params.operator || "Auto";
+          let prod = t.type.toUpperCase() + (t.params.judul ? " - " + t.params.judul : "");
 
-        tasksHtml += `
+          tasksHtml += `
           <div style="border-top: 1px solid var(--border); padding-top: 0.5rem; margin-top: 0.5rem;">
             <div class="dc-product" style="font-size: 0.85rem; display:flex; justify-content:space-between; align-items:center;">
               <strong>${escapeHtml(prod)}</strong>
@@ -1004,8 +1004,8 @@ function renderModernDashboard() {
           </div>
         `;
 
-        if (cls === 'live' && t.type === 'lelang') {
-          tableHtml += `
+          if (cls === 'live' && t.type === 'lelang') {
+            tableHtml += `
             <tr>
               <td><a href="#" class="t-dev">${escapeHtml(devName)}</a></td>
               <td>${escapeHtml(prod)}</td>
@@ -1015,14 +1015,14 @@ function renderModernDashboard() {
               <td>${escapeHtml(op)}</td>
             </tr>
           `;
-        }
-      });
+          }
+        });
 
-      if (devHasError) errorCount++;
+        if (devHasError) errorCount++;
 
-      if (b.tasks && b.tasks.length > 0) {
-        let devStatusCls = b.status === "running" ? "live" : (b.status === "paused" ? "pause" : "idle");
-        gridHtml += `
+        if (b.tasks && b.tasks.length > 0) {
+          let devStatusCls = b.status === "running" ? "live" : (b.status === "paused" ? "pause" : "idle");
+          gridHtml += `
           <div class="device-card-modern">
             <div class="dc-header">
               <div>
@@ -1034,125 +1034,136 @@ function renderModernDashboard() {
             ${tasksHtml}
           </div>
         `;
+        }
+      });
+
+      if (!hasAnyTask && allSerials.size > 0) {
+        gridHtml = '<div class="muted">Device terhubung, namun belum ada tugas (task) yang dikonfigurasi.</div>';
+      }
+
+      const kpiValues = document.querySelectorAll('.kpi-value');
+      if (kpiValues.length >= 4) {
+        kpiValues[0].innerText = totalConnected;
+        kpiValues[1].innerText = liveCount;
+        kpiValues[2].innerText = idleCount;
+        kpiValues[3].innerText = errorCount;
+      }
+
+      const grid = document.getElementById("mock-device-grid");
+      const table = document.getElementById("mock-ticker-table");
+      if (grid) grid.innerHTML = gridHtml;
+      if (table) table.innerHTML = tableHtml || '<tr><td colspan="6" class="muted">Tidak ada lelang aktif</td></tr>';
+    }).catch(e => console.error("Error fetching bots for dashboard:", e));
+
+    setTimeout(() => {
+      if (window.Chart && !window.myActivityChart) {
+        const ctx = document.getElementById('activityChart');
+        if (ctx) {
+          window.myActivityChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: ['17:20', '17:50', '18:40', '19:20', '20:00', '20:40', '20:41', '20:43', '20:45'],
+              datasets: [
+                { label: 'Aktivitas Bid', data: [10, 15, 9, 14, 8, 15, 12, 10, 14], borderColor: '#3b82f6', tension: 0.4, borderWidth: 2 },
+                { label: 'Device LIVE', data: [13, 14, 13, 15, 14, 13, 15, 15, 15], borderColor: '#00b87c', tension: 0.4, borderWidth: 2 }
+              ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#1e293b' } }, x: { grid: { color: '#1e293b' } } }, plugins: { legend: { display: false } } }
+          });
+        }
+      }
+    }, 500);
+  }
+
+
+
+  // Hook into view switching to render the mock data when New Dashboard is shown
+
+  // Hook into view switching (Updated for Partials)
+  const navItems = document.querySelectorAll(".nav-item[data-view]");
+  navItems.forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      console.log("Sidebar clicked:", btn.dataset.view);
+
+      // Hide all
+      document.querySelectorAll(".view-panel").forEach(v => {
+        v.classList.add("hidden");
+        v.style.display = 'none'; // Force hide just in case
+      });
+      document.querySelectorAll(".nav-item[data-view]").forEach(b => b.classList.remove("active"));
+
+      // Show target
+      btn.classList.add("active");
+      const target = document.getElementById("view-" + btn.dataset.view);
+      if (target) {
+        target.classList.remove("hidden");
+        target.style.display = 'block'; // Force show just in case
+        console.log("Unhidden target:", target.id);
+      } else {
+        console.error("Target view not found:", "view-" + btn.dataset.view);
+      }
+
+      // Run mock renderer if it's the new dashboard
+      if (btn.dataset.view === "dashboard_new") {
+        renderModernDashboard();
+      }
+
+      // Load partial if data-partial exists (Task Creation)
+      if (btn.dataset.partial) {
+        const container = document.getElementById("dynamic-task-container");
+        const title = document.getElementById("task-form-title");
+        if (container) {
+          container.innerHTML = '<div class="muted">Loading ' + btn.dataset.partial + '...</div>';
+
+          // Update Title based on clicked menu text
+          const navText = btn.querySelector('.nav-text');
+          if (navText && title) {
+            // Keep the span for header-dev-1
+            const devSpan = title.querySelector('#header-dev-1');
+            title.innerHTML = 'Configure ' + navText.innerText;
+            if (devSpan) title.appendChild(devSpan);
+          }
+
+          fetch('/static/views/' + btn.dataset.partial)
+            .then(res => {
+              if (!res.ok) throw new Error("HTTP " + res.status);
+              return res.text();
+            })
+            .then(html => {
+              container.innerHTML = html;
+              // Re-bind listeners for the newly injected buttons
+              bindPartialButtons();
+            })
+            .catch(err => {
+              container.innerHTML = '<div class="text-red">Gagal memuat komponen: ' + err.message + '</div>';
+            });
+        }
       }
     });
+  });
 
-    if (!hasAnyTask && allSerials.size > 0) {
-      gridHtml = '<div class="muted">Device terhubung, namun belum ada tugas (task) yang dikonfigurasi.</div>';
+  // Helper to bind events dynamically for the newly loaded forms
+  function bindPartialButtons() {
+    const addBtn = document.querySelector('.btn-add-task-partial');
+    const runBtn = document.querySelector('.btn-run-once-partial');
+
+    if (addBtn) {
+      addBtn.onclick = () => {
+        const task = addBtn.dataset.task;
+        handleTaskAction('add', task);
+      };
     }
 
-    const kpiValues = document.querySelectorAll('.kpi-value');
-    if (kpiValues.length >= 4) {
-      kpiValues[0].innerText = totalConnected;
-      kpiValues[1].innerText = liveCount;
-      kpiValues[2].innerText = idleCount;
-      kpiValues[3].innerText = errorCount;
+    if (runBtn) {
+      runBtn.onclick = () => {
+        const task = runBtn.dataset.task;
+        handleTaskAction('run', task);
+      };
     }
-
-    const grid = document.getElementById("mock-device-grid");
-    const table = document.getElementById("mock-ticker-table");
-    if (grid) grid.innerHTML = gridHtml;
-    if (table) table.innerHTML = tableHtml || '<tr><td colspan="6" class="muted">Tidak ada lelang aktif</td></tr>';
-  }).catch(e => console.error("Error fetching bots for dashboard:", e));
-
-  setTimeout(() => {
-    if (window.Chart && !window.myActivityChart) {
-      const ctx = document.getElementById('activityChart');
-      if (ctx) {
-        window.myActivityChart = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: ['17:20', '17:50', '18:40', '19:20', '20:00', '20:40', '20:41', '20:43', '20:45'],
-            datasets: [
-              { label: 'Aktivitas Bid', data: [10, 15, 9, 14, 8, 15, 12, 10, 14], borderColor: '#3b82f6', tension: 0.4, borderWidth: 2 },
-              { label: 'Device LIVE', data: [13, 14, 13, 15, 14, 13, 15, 15, 15], borderColor: '#00b87c', tension: 0.4, borderWidth: 2 }
-            ]
-          },
-          options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#1e293b' } }, x: { grid: { color: '#1e293b' } } }, plugins: { legend: { display: false } } }
-        });
-      }
-    }
-  }, 500);
-}
-
-
-
-// Hook into view switching to render the mock data when New Dashboard is shown
-
-// Hook into view switching (Updated for Partials)
-const oldShowView = document.querySelectorAll(".nav-item[data-view]");
-oldShowView.forEach(btn => {
-  btn.onclick = (e) => {
-    // Hide all
-    document.querySelectorAll(".view-panel").forEach(v => v.classList.add("hidden"));
-    document.querySelectorAll(".nav-item[data-view]").forEach(b => b.classList.remove("active"));
-
-    // Show target
-    btn.classList.add("active");
-    const target = document.getElementById("view-" + btn.dataset.view);
-    if (target) target.classList.remove("hidden");
-
-    // Run mock renderer if it's the new dashboard
-    if (btn.dataset.view === "dashboard_new") {
-      renderModernDashboard();
-    }
-
-    // Load partial if data-partial exists (Task Creation)
-    if (btn.dataset.partial) {
-      const container = document.getElementById("dynamic-task-container");
-      const title = document.getElementById("task-form-title");
-      if (container) {
-        container.innerHTML = '<div class="muted">Loading ' + btn.dataset.partial + '...</div>';
-
-        // Update Title based on clicked menu text
-        const navText = btn.querySelector('.nav-text');
-        if (navText && title) {
-          // Keep the span for header-dev-1
-          const devSpan = title.querySelector('#header-dev-1');
-          title.innerHTML = 'Configure ' + navText.innerText;
-          if (devSpan) title.appendChild(devSpan);
-        }
-
-        fetch('/static/views/' + btn.dataset.partial)
-          .then(res => {
-            if (!res.ok) throw new Error("HTTP " + res.status);
-            return res.text();
-          })
-          .then(html => {
-            container.innerHTML = html;
-            // Re-bind listeners for the newly injected buttons
-            bindPartialButtons();
-          })
-          .catch(err => {
-            container.innerHTML = '<div class="text-red">Gagal memuat komponen: ' + err.message + '</div>';
-          });
-      }
-    }
-  };
-});
-
-// Helper to bind events dynamically for the newly loaded forms
-function bindPartialButtons() {
-  const addBtn = document.querySelector('.btn-add-task-partial');
-  const runBtn = document.querySelector('.btn-run-once-partial');
-
-  if (addBtn) {
-    addBtn.onclick = () => {
-      const task = addBtn.dataset.task;
-      handleTaskAction('add', task);
-    };
   }
 
-  if (runBtn) {
-    runBtn.onclick = () => {
-      const task = runBtn.dataset.task;
-      handleTaskAction('run', task);
-    };
-  }
-}
-
-// Re-route original handleTaskAction logic here if needed, or assume it's in the old code.
-// We just need to make sure handleTaskAction (or btn-add-task logic) exists globally.
+  // Re-route original handleTaskAction logic here if needed, or assume it's in the old code.
+  // We just need to make sure handleTaskAction (or btn-add-task logic) exists globally.
 
 
 })();
