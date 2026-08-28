@@ -945,14 +945,29 @@
     }
   }
 
-  // Init monitor if active tab is monitor
+  let dashboardInterval = null;
+
+  function startDashboardLoop() {
+    renderModernDashboard();
+    if (!dashboardInterval) {
+      dashboardInterval = setInterval(renderModernDashboard, 2000);
+    }
+  }
+
+  function stopDashboardLoop() {
+    if (dashboardInterval) {
+      clearInterval(dashboardInterval);
+      dashboardInterval = null;
+    }
+  }
+
+  // Init loops if active tab matches
   const activeView = document.querySelector('.nav-item.active').dataset.view;
   if (activeView === "monitor") {
     startMonitorLoop();
   } else if (activeView === "dashboard_new") {
-    renderModernDashboard();
+    startDashboardLoop();
   }
-
 
   // SIDEBAR TOGGLE
   const btnToggle = document.getElementById('btn-toggle-sidebar');
@@ -971,7 +986,8 @@
       const devices = state.devices || [];
 
       let totalConnected = devices.length;
-      let liveCount = 0;
+      let totalTasks = 0;
+      let executingTasks = 0;
       let idleCount = 0;
       let errorCount = 0;
 
@@ -990,10 +1006,8 @@
         const b = bots[serial] || { status: "offline", tasks: [] };
         const devName = d.name || (d.brand && d.brand !== "Unknown" ? `${d.brand} ${d.model}` : d.model) || serial;
 
-        if (b.status === "running") liveCount++;
-        else if (b.status === "paused" || b.status === "stopped") idleCount++;
+        if (b.status === "paused" || b.status === "stopped") idleCount++;
 
-        let devHasError = false;
         let tasksHtml = "";
 
         // Combine scheduled tasks, active task, and queued tasks
@@ -1005,7 +1019,8 @@
 
         allDevTasks.forEach(t => {
           hasAnyTask = true;
-          if (t.last_error) devHasError = true;
+          if (t.enabled || t.manual) totalTasks++;
+          if (t.last_error) errorCount++;
 
           let cls = 'idle';
           let label = 'IDLE';
@@ -1013,7 +1028,7 @@
           let isQueued = (b.queue || []).find(x => x.id === t.id);
 
           if (t.last_error) { cls = 'error'; label = 'ERROR'; }
-          else if (isActive) { cls = 'live'; label = 'RUNNING'; }
+          else if (isActive) { cls = 'live'; label = 'RUNNING'; executingTasks++; }
           else if (isQueued) { cls = 'warn'; label = 'QUEUED'; }
           else if (b.status === 'running' && t.enabled) { cls = 'live'; label = 'LIVE'; }
           else if (b.status === 'paused' || !t.enabled) { cls = 'pause'; label = 'PAUSE'; }
@@ -1072,8 +1087,6 @@
           }
         });
 
-        if (devHasError) errorCount++;
-
         if (allDevTasks.length > 0) {
           let devStatusCls = b.status === "running" ? "live" : (b.status === "paused" ? "pause" : "idle");
           gridHtml += `
@@ -1096,11 +1109,12 @@
       }
 
       const kpiValues = document.querySelectorAll('.kpi-value');
-      if (kpiValues.length >= 4) {
+      if (kpiValues.length >= 5) {
         kpiValues[0].innerText = totalConnected;
-        kpiValues[1].innerText = liveCount;
-        kpiValues[2].innerText = idleCount;
-        kpiValues[3].innerText = errorCount;
+        kpiValues[1].innerText = totalTasks;
+        kpiValues[2].innerText = executingTasks;
+        kpiValues[3].innerText = idleCount;
+        kpiValues[4].innerText = errorCount;
       }
 
       const grid = document.getElementById("mock-device-grid");
@@ -1145,6 +1159,10 @@
         v.style.display = 'none'; // Force hide just in case
       });
       document.querySelectorAll(".nav-item[data-view]").forEach(b => b.classList.remove("active"));
+      
+      // Stop loops
+      stopMonitorLoop();
+      stopDashboardLoop();
 
       // Show target
       btn.classList.add("active");
@@ -1157,9 +1175,11 @@
         console.error("Target view not found:", "view-" + btn.dataset.view);
       }
 
-      // Run mock renderer if it's the new dashboard
+      // Run logic for specific views
       if (btn.dataset.view === "dashboard_new") {
-        renderModernDashboard();
+        startDashboardLoop();
+      } else if (btn.dataset.view === "monitor") {
+        startMonitorLoop();
       }
 
       // Load partial if data-partial exists (Task Creation)
