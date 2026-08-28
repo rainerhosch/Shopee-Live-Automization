@@ -3,6 +3,11 @@ echo ==============================================
 echo Starting Shopee Live Bot...
 echo ==============================================
 
+:: Check for updates
+echo Checking for updates...
+git pull origin master
+echo Update completed.
+
 :: Activating virtual environment
 call .venv\Scripts\activate
 
