@@ -66,9 +66,9 @@ class DeviceManager:
             return True
         return False
 
-    async def tap_text(self, devices: str, text: str, timeout: int = 3, tap_right_edge: bool = False, suppress_error: bool = False) -> bool:
+    async def tap_text(self, devices: str, text: str, timeout: int = 3, tap_right_edge: bool = False, tap_x_offset: int = 0, tap_y_offset: int = 0, tap_below: bool = False, suppress_error: bool = False) -> bool:
         if hasattr(self.client, "tap_text"):
-            return await self.client.tap_text(devices, text, timeout=timeout, tap_right_edge=tap_right_edge, suppress_error=suppress_error)
+            return await self.client.tap_text(devices, text, timeout=timeout, tap_right_edge=tap_right_edge, tap_x_offset=tap_x_offset, tap_y_offset=tap_y_offset, tap_below=tap_below, suppress_error=suppress_error)
         return False
 
     async def check_text_exists(self, devices: str, text: str) -> bool:

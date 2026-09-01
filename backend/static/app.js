@@ -23,6 +23,7 @@
   async function api(path, options = {}) {
     const res = await fetch(path, {
       headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+      cache: "no-store",
       ...options,
     });
     const text = await res.text();

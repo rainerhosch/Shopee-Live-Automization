@@ -276,6 +276,51 @@ def find_node_by_text(root: ET.Element, text: str) -> Optional[dict]:
             
     return best_match
 
+def get_node_below(root: ET.Element, cx: int, cy: int) -> Optional[dict]:
+    """
+    Mencari node clickable terdekat (atau input field) yang berada persis di bawah koordinat cx, cy.
+    Sangat berguna agar tahan terhadap perubahan ukuran layar (resolution independent).
+    """
+    if root is None:
+        return None
+        
+    best_node = None
+    min_dist = float('inf')
+    
+    queue = [root]
+    while queue:
+        node = queue.pop(0)
+        bounds_str = node.attrib.get('bounds')
+        is_clickable = node.attrib.get('clickable') == 'true'
+        is_edittext = 'EditText' in node.attrib.get('class', '')
+        
+        if bounds_str and (is_clickable or is_edittext):
+            bounds_str = bounds_str.replace('][', ',').replace('[', '').replace(']', '')
+            try:
+                x1, y1, x2, y2 = map(int, bounds_str.split(','))
+                node_cx = x1 + (x2 - x1) // 2
+                node_cy = y1 + (y2 - y1) // 2
+                
+                # Cek apakah node ini berada di bawah cy (y1 >= cy atau node_cy > cy)
+                # dan secara horizontal (X) beririsan atau berdekatan (selisih cx tidak terlalu jauh)
+                if node_cy > cy and abs(node_cx - cx) < 300: 
+                    # Hitung jarak vertikal
+                    dist = node_cy - cy
+                    if dist < min_dist:
+                        min_dist = dist
+                        best_node = {
+                            "text": node.attrib.get('text', ''),
+                            "bounds": (x1, y1, x2, y2),
+                            "center": (node_cx, node_cy)
+                        }
+            except Exception:
+                pass
+                
+        for child in node:
+            queue.append(child)
+            
+    return best_node
+
 def find_all_nodes_by_regex(root: ET.Element, pattern: str) -> list[dict]:
     """
     Mencari semua node yang memiliki text atau content-desc sesuai dengan regex pattern.

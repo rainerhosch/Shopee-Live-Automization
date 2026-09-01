@@ -5,7 +5,7 @@ from typing import Any
 from .config import get_point
 
 
-def _tap_step(key: str, profile: dict[str, Any], delay_ms: int, note: str = "", text_target: str = None, strict_text: bool = False) -> dict[str, Any]:
+def _tap_step(key: str, profile: dict[str, Any], delay_ms: int, note: str = "", text_target: str = None, strict_text: bool = False, tap_right_edge: bool = False, tap_x_offset: int = 0, tap_y_offset: int = 0, tap_below: bool = False) -> dict[str, Any]:
     try:
         pt = get_point(profile, key)
         x, y = pt["x"], pt["y"]
@@ -19,6 +19,10 @@ def _tap_step(key: str, profile: dict[str, Any], delay_ms: int, note: str = "", 
         "y": y,
         "text_target": text_target,
         "strict_text": strict_text,
+        "tap_right_edge": tap_right_edge,
+        "tap_x_offset": tap_x_offset,
+        "tap_y_offset": tap_y_offset,
+        "tap_below": tap_below,
         "delay_ms": delay_ms,
         "note": note or key,
     }
@@ -328,7 +332,7 @@ def build_hujan_bonus(profile: dict[str, Any], params: dict[str, Any], settings:
             {"kind": "input_text", "content": koin, "delay_ms": delay, "note": f"Input Koin {koin}"},
             {"kind": "push", "type": 4, "delay_ms": delay + 800, "note": "Dismiss Keyboard (BACK)"},
             
-            _tap_step("hujan.input_pemenang", profile, delay + 200, "Focus Jumlah Pemenang"),
+            _tap_step("hujan.input_pemenang", profile, delay + 200, "Focus Jumlah Pemenang", text_target="Jumlah Pemenang", tap_y_offset=90),
             {"kind": "clear_text", "delay_ms": delay, "note": "Hapus isi sebelumnya"},
             {"kind": "input_text", "content": pemenang, "delay_ms": delay, "note": f"Input Pemenang {pemenang}"},
             {"kind": "push", "type": 4, "delay_ms": delay + 800, "note": "Dismiss Keyboard (BACK)"},

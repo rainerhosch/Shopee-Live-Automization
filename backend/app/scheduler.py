@@ -436,7 +436,10 @@ class BotScheduler:
             if text_target and not dry:
                 if hasattr(device_manager, "tap_text"):
                     tap_right = step.get("tap_right_edge", False)
-                    success = await device_manager.tap_text(self.device, text_target, timeout=5, tap_right_edge=tap_right)
+                    tap_x_offset = step.get("tap_x_offset", 0)
+                    tap_y_offset = step.get("tap_y_offset", 0)
+                    tap_below = step.get("tap_below", False)
+                    success = await device_manager.tap_text(self.device, text_target, timeout=5, tap_right_edge=tap_right, tap_x_offset=tap_x_offset, tap_y_offset=tap_y_offset, tap_below=tap_below)
                     if success:
                         resp = {"code": 10000, "message": f"Text matched: {text_target}"}
                     elif step.get("strict_text"):
