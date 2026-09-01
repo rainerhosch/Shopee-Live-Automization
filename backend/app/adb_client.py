@@ -93,11 +93,11 @@ class AdbClient:
             raise RuntimeError("Failed to get screencap")
         return bytes_data
 
-    async def tap_text(self, devices: str, text: str, timeout: int = 5, tap_right_edge: bool = False) -> bool:
+    async def tap_text(self, devices: str, text: str, timeout: int = 3, tap_right_edge: bool = False, tap_x_offset: int = 0, tap_y_offset: int = 0, tap_below: bool = False, suppress_error: bool = False) -> bool:
         """
-        Mencari teks di layar (menggunakan UI Automator) dan melakukan tap jika ditemukan.
+        Mencari teks di layar dengan dump UI, jika ketemu tap titik tengahnya.
         """
-        from .vision import dump_ui, find_node_by_text
+        from .vision import dump_ui, find_node_by_text, get_node_below
         from .logger import log_bus
         import time
         
@@ -108,6 +108,12 @@ class AdbClient:
             node = find_node_by_text(root, text)
             if node:
                 cx, cy = node['center']
+                
+                if tap_below:
+                    closest = get_node_below(root, cx, cy)
+                    if closest:
+                        cx, cy = closest['center']
+                        
                 if tap_right_edge:
                     try:
                         bounds_str = root.attrib.get('bounds', '[0,0][1080,2400]')
@@ -115,12 +121,19 @@ class AdbClient:
                         cx = int(screen_width * 0.85)
                     except:
                         cx = cx + 300  # Fallback offset
+                
+                cx += tap_x_offset
+                cy += tap_y_offset
+                
                 await log_bus.info(f"🎯 Ditemukan '{text}' di baris {cy}, tap di ({cx}, {cy})")
                 await self.tap(devices, cx, cy)
                 return True
             await asyncio.sleep(1)
             
-        await log_bus.error(f"❌ Teks '{text}' tidak ditemukan setelah {timeout} detik.")
+        if not suppress_error:
+            await log_bus.error(f"❌ Teks '{text}' tidak ditemukan setelah {timeout} detik.")
+        else:
+            await log_bus.info(f"⏭ Teks opsional '{text}' tidak ditemukan (diabaikan).")
         return False
 
     async def read_text_by_regex(self, devices: str, pattern: str, timeout: int = 5) -> dict | None:

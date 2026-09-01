@@ -197,6 +197,45 @@ def find_image_on_screen(screen_bytes: bytes, template_path: str, threshold: flo
 
     return None
 
+def find_orange_button_color(screen_bytes: bytes) -> Optional[dict]:
+    """
+    Deteksi tombol oranye/merah Shopee (seperti Mulai Baru atau Konfirmasi) menggunakan warna.
+    Super cepat, tanpa template PNG.
+    """
+    try:
+        np_arr = np.frombuffer(screen_bytes, np.uint8)
+        img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+        if img is None: return None
+        
+        h, w = img.shape[:2]
+        crop_y = int(h * 0.4) # Cari di 60% terbawah
+        cropped = img[crop_y:h, :]
+        
+        hsv = cv2.cvtColor(cropped, cv2.COLOR_BGR2HSV)
+        # Warna oranye/merah Shopee
+        mask1 = cv2.inRange(hsv, np.array([0, 150, 150]), np.array([15, 255, 255]))
+        mask2 = cv2.inRange(hsv, np.array([160, 150, 150]), np.array([180, 255, 255]))
+        mask = cv2.bitwise_or(mask1, mask2)
+        
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if not contours: return None
+        
+        # Cari contour terlebar
+        c = max(contours, key=cv2.contourArea)
+        cx, cy, cw, ch = cv2.boundingRect(c)
+        
+        # Harus cukup lebar (minimal 30% layar) untuk memastikan itu tombol utama
+        if cw > w * 0.3:
+            center_x = cx + cw // 2
+            center_y = crop_y + cy + ch // 2
+            return {"center": (center_x, center_y), "confidence": 1.0}
+            
+    except Exception as e:
+        import logging
+        logging.error(f"Error in find_orange_button_color: {e}")
+        
+    return None
+
 def find_node_by_text(root: ET.Element, text: str) -> Optional[dict]:
     """
     Mencari node yang memiliki text atau content-desc sesuai dengan target (case-insensitive & partial match).
@@ -236,6 +275,51 @@ def find_node_by_text(root: ET.Element, text: str) -> Optional[dict]:
             queue.append(child)
             
     return best_match
+
+def get_node_below(root: ET.Element, cx: int, cy: int) -> Optional[dict]:
+    """
+    Mencari node clickable terdekat (atau input field) yang berada persis di bawah koordinat cx, cy.
+    Sangat berguna agar tahan terhadap perubahan ukuran layar (resolution independent).
+    """
+    if root is None:
+        return None
+        
+    best_node = None
+    min_dist = float('inf')
+    
+    queue = [root]
+    while queue:
+        node = queue.pop(0)
+        bounds_str = node.attrib.get('bounds')
+        is_clickable = node.attrib.get('clickable') == 'true'
+        is_edittext = 'EditText' in node.attrib.get('class', '')
+        
+        if bounds_str and (is_clickable or is_edittext):
+            bounds_str = bounds_str.replace('][', ',').replace('[', '').replace(']', '')
+            try:
+                x1, y1, x2, y2 = map(int, bounds_str.split(','))
+                node_cx = x1 + (x2 - x1) // 2
+                node_cy = y1 + (y2 - y1) // 2
+                
+                # Cek apakah node ini berada di bawah cy (y1 >= cy atau node_cy > cy)
+                # dan secara horizontal (X) beririsan atau berdekatan (selisih cx tidak terlalu jauh)
+                if node_cy > cy and abs(node_cx - cx) < 300: 
+                    # Hitung jarak vertikal
+                    dist = node_cy - cy
+                    if dist < min_dist:
+                        min_dist = dist
+                        best_node = {
+                            "text": node.attrib.get('text', ''),
+                            "bounds": (x1, y1, x2, y2),
+                            "center": (node_cx, node_cy)
+                        }
+            except Exception:
+                pass
+                
+        for child in node:
+            queue.append(child)
+            
+    return best_node
 
 def find_all_nodes_by_regex(root: ET.Element, pattern: str) -> list[dict]:
     """
