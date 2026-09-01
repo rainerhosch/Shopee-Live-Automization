@@ -155,11 +155,29 @@ class BotScheduler:
                         interval = int(task.get("interval_sec") or 300)
                         last = self.last_run.get(tid, 0)
                         if now - last >= interval:
-                            if self.active_task is not None or len(self.queue) > 0:
-                                pass # Jangan update last_run, biarkan mencoba lagi detik berikutnya
-                            else:
+                            # Cek apakah task masih mengantre atau sedang berjalan
+                            is_in_queue = any(q["id"] == tid for q in self.queue)
+                            is_active = self.active_task and self.active_task["id"] == tid
+                            
+                            if not is_in_queue and not is_active:
                                 self.queue.append(task)
-                                self.last_run[tid] = time.time()
+                                
+                                # 1. Priority Queue: Bot Iklan prioritas tertinggi
+                                def get_priority(t: dict[str, Any]) -> int:
+                                    return 1 if t.get("type") == "iklan_live" else 2
+                                self.queue.sort(key=get_priority)
+                                
+                                # 2. Fixed Schedule: Jangan ikuti jam selesai, tapi jam target
+                                if last == 0:
+                                    self.last_run[tid] = now
+                                else:
+                                    # Advance by exactly the interval to prevent drift
+                                    # If it was severely delayed (skipped multiple intervals), catch up
+                                    # but typically just last + interval
+                                    new_last = last + interval
+                                    while now - new_last >= interval:
+                                        new_last += interval
+                                    self.last_run[tid] = new_last
                 await asyncio.sleep(1.0)
         except asyncio.CancelledError:
             pass
@@ -361,6 +379,13 @@ class BotScheduler:
                         "delay_ms": 1000,
                         "note": f"Type Modal {new_modal} (Top Up)"
                     })
+                    # 4b. Tutup Keyboard (PENTING: Mencegah bug ketik angka acak 1/3)
+                    new_steps.append({
+                        "kind": "push",
+                        "type": 4,
+                        "delay_ms": 1000,
+                        "note": "Dismiss Keyboard (BACK)"
+                    })
                     # 5. Klik Selanjutnya
                     new_steps.append({
                         "kind": "tap",
@@ -500,24 +525,35 @@ class BotScheduler:
         if kind == "tap_optional":
             text_target = step.get("text_target", "")
             if not dry and text_target:
-                has_text = await device_manager.check_text_exists(self.device, text_target)
-                if has_text:
-                    await log_bus.info(f"Tombol opsional '{text_target}' terdeteksi, menekan tombol...")
-                    await device_manager.tap_text(self.device, text_target)
-                    await asyncio.sleep(1)
+                await log_bus.info(f"🔍 Mencari tombol '{text_target}' jika tersedia...")
+                
+                # Gunakan deteksi warna khusus untuk Mulai Baru karena uiautomator buta di webview ini
+                if text_target == "Mulai Baru":
+                    has_text = await device_manager.tap_color_orange_button(self.device)
+                else:
+                    has_text = await device_manager.check_text_exists(self.device, text_target)
+                    if has_text:
+                        await log_bus.info(f"Tombol '{text_target}' terdeteksi, menekan tombol...")
+                        await device_manager.tap_text(self.device, text_target, suppress_error=True)
+                
+                if not has_text:
+                    await log_bus.info(f"⏭ Tombol '{text_target}' tidak ada (Sesi baru, melanjutkan).")
             return {"ok": True, "step": step}
 
         if kind == "tap_image":
             template_path = step.get("template_path", "")
             threshold = step.get("threshold", 0.8)
+            optional = step.get("optional", False)
             if not dry and template_path:
                 await log_bus.info(f"🔍 Mencari gambar '{template_path}' di layar...")
                 success = await device_manager.tap_image(self.device, template_path, threshold)
                 if not success:
-                    await log_bus.error(f"❌ Gambar '{template_path}' tidak ditemukan.")
-                    # Let it continue or fail based on behavior? For now, we return error if not found.
-                    # If you want it to not fail the whole task, you can return {"ok": True} but typically we want it to fail if a mandatory button is missing.
-                    return {"ok": False, "error": f"Template {template_path} not found"}
+                    if optional:
+                        await log_bus.info(f"⏭ Gambar opsional '{template_path}' tidak ditemukan (diabaikan).")
+                        return {"ok": True, "step": step}
+                    else:
+                        await log_bus.error(f"❌ Gambar '{template_path}' tidak ditemukan.")
+                        return {"ok": False, "error": f"Template {template_path} not found"}
             return {"ok": True, "step": step}
 
         raise ValueError(f"Unknown step kind: {kind}")

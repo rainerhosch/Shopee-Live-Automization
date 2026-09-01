@@ -76,6 +76,13 @@ def build_lelang(profile: dict[str, Any], params: dict[str, Any], settings: dict
         _tap_step("home.lelang", profile, delay + 200, "Open Lelang"),
         _assert_text("Harga", timeout_ms=5000, note="Verifikasi Menu Lelang Terbuka")
     ]
+    
+    mode_eksekusi = params.get("mode_eksekusi", "pengaturan_awal")
+    if mode_eksekusi == "lanjutan":
+        steps.append(_tap_step(time_map[batas], profile, delay, f"Batas {batas}", text_target=batas))
+        steps.append(_tap_step("lelang.mulai", profile, delay + 300, "Mulai", text_target="Mulai"))
+        return steps
+
     if params.get("judul"):
         steps.append(_tap_step("lelang.judul", profile, delay, "Focus Judul"))
         steps.append({"kind": "clear_text", "delay_ms": delay, "note": "Hapus teks sebelumnya"})
@@ -161,10 +168,13 @@ def build_iklan_live(profile: dict[str, Any], params: dict[str, Any], settings: 
         _assert_text("Buat Iklan", timeout_ms=8000, note="Verifikasi Menu Iklan Terbuka")
     ]
     
-    fallback_steps = [
-        _tap_step("iklan.tujuan_dropdown", profile, delay + 1000, "Buka Opsi Tujuan", text_target="Tujuan"),
-    ]
-    fallback_steps[-1]["tap_right_edge"] = True
+    mode_eksekusi = params.get("mode_eksekusi", "pengaturan_awal")
+    
+    fallback_steps = []
+    
+    if mode_eksekusi == "pengaturan_awal":
+        fallback_steps.append(_tap_step("iklan.tujuan_dropdown", profile, delay + 1000, "Buka Opsi Tujuan", text_target="Tujuan"))
+        fallback_steps[-1]["tap_right_edge"] = True
     
     # 1. Select Main Tujuan in Popup
     if tujuan == "Tingkatkan Penonton":
@@ -236,7 +246,7 @@ def build_iklan_live(profile: dict[str, Any], params: dict[str, Any], settings: 
             "note": f"Type Modal {modal_harian}",
         })
     
-    fallback_steps.append(_tap_step("iklan.modal_selanjutnya", profile, delay + 1000, "Selanjutnya (Modal)", text_target="Selanjutnya"))
+        fallback_steps.append(_tap_step("iklan.modal_selanjutnya", profile, delay + 1000, "Selanjutnya (Modal)", text_target="Selanjutnya"))
     fallback_steps.append(_tap_step("iklan.aktifkan", profile, delay, "Aktifkan Iklan", text_target="Aktifkan Iklan"))
     
     # 6. Optional: Konfirmasi penggantian iklan jika ada iklan lain yang sedang berjalan
@@ -262,41 +272,73 @@ def build_bonus_koin(profile: dict[str, Any], params: dict[str, Any], settings: 
     delay = int(settings.get("step_delay_ms", 600))
     untuk = str(params.get("untuk_dibagikan", "100000"))
     klaim = str(params.get("koin_per_klaim", "100"))
-    jumlah = str(params.get("jumlah_klaim", "1000"))
+    mode_eksekusi = params.get("mode_eksekusi", "pengaturan_awal")
 
-    return [
+    steps = [
         _tap_step("home.lainnya", profile, delay + 200, "Open Lainnya"),
-        _tap_step("lainnya.bonus_koin", profile, delay + 200, "Open Bonus Koin", text_target="Bonus Koin"),
-        _tap_step("bonus.input_dibagikan", profile, delay, "Focus Bagi"),
-        {"kind": "clear_text", "delay_ms": delay, "note": "Hapus isi sebelumnya"},
-        {"kind": "input_text", "content": untuk, "delay_ms": delay, "note": f"Input Bagi {untuk}"},
-        {"kind": "push", "type": 4, "delay_ms": delay, "note": "Dismiss Keyboard (BACK)"},
-
-        _tap_step("bonus.input_per_klaim", profile, delay, "Focus Klaim"),
-        {"kind": "clear_text", "delay_ms": delay, "note": "Hapus isi sebelumnya"},
-        {"kind": "input_text", "content": klaim, "delay_ms": delay, "note": f"Input Klaim {klaim}"},
-        {"kind": "push", "type": 4, "delay_ms": delay, "note": "Dismiss Keyboard (BACK)"},
-
-        _tap_step("bonus.mulai", profile, delay + 500, "Simpan Bonus Koin", text_target="Mulai"),
+        _tap_step("lainnya.bonus_koin", profile, delay + 2500, "Open Bonus Koin", text_target="Bonus Koin"),
+        {
+            "kind": "tap_optional",
+            "text_target": "Mulai Baru",
+            "timeout_ms": 3000,
+            "delay_ms": delay + 500,
+            "note": "Klik Mulai Baru jika ada sesi sebelumnya"
+        }
     ]
+    
+    if mode_eksekusi == "pengaturan_awal":
+        steps.extend([
+            _tap_step("bonus.input_dibagikan", profile, delay + 200, "Focus Bagi"),
+            {"kind": "clear_text", "delay_ms": delay, "note": "Hapus isi sebelumnya"},
+            {"kind": "input_text", "content": untuk, "delay_ms": delay, "note": f"Input Bagi {untuk}"},
+            {"kind": "push", "type": 4, "delay_ms": delay + 800, "note": "Dismiss Keyboard (BACK)"},
+
+            _tap_step("bonus.input_per_klaim", profile, delay + 200, "Focus Klaim"),
+            {"kind": "clear_text", "delay_ms": delay, "note": "Hapus isi sebelumnya"},
+            {"kind": "input_text", "content": klaim, "delay_ms": delay, "note": f"Input Klaim {klaim}"},
+            {"kind": "push", "type": 4, "delay_ms": delay + 800, "note": "Dismiss Keyboard (BACK)"},
+        ])
+
+    steps.append(_tap_step("bonus.mulai", profile, delay + 2500, "Simpan Bonus Koin", text_target="Mulai"))
+    steps.append({
+        "kind": "tap_optional",
+        "text_target": "Konfirmasi",
+        "timeout_ms": 3000,
+        "delay_ms": delay + 500,
+        "note": "Klik Konfirmasi jika menimpa sesi sebelumnya"
+    })
+    return steps
 
 
 def build_hujan_bonus(profile: dict[str, Any], params: dict[str, Any], settings: dict[str, Any]) -> list[dict[str, Any]]:
     delay = int(settings.get("step_delay_ms", 600))
     koin = str(params.get("koin_dibagikan", "255"))
+    pemenang = str(params.get("jumlah_pemenang", "50"))
+    mode_eksekusi = params.get("mode_eksekusi", "pengaturan_awal")
 
-    return [
+    steps = [
         _tap_step("home.lainnya", profile, delay + 200, "Open Lainnya"),
         _tap_step("lainnya.hujan_bonus", profile, delay + 200, "Open Hujan Bonus", text_target="Hujan Bonus"),
-        
-        _tap_step("hujan.input_koin", profile, delay, "Focus Koin Hujan", text_target="Atur Sekarang"),
-        {"kind": "clear_text", "delay_ms": delay, "note": "Hapus isi sebelumnya"},
-        {"kind": "input_text", "content": koin, "delay_ms": delay, "note": f"Input Koin {koin}"},
-        {"kind": "push", "type": 4, "delay_ms": delay, "note": "Dismiss Keyboard (BACK)"},
-        
-        _tap_step("hujan.mulai", profile, delay + 300, "Mulai Hujan Bonus", text_target="Mulai"),
-        _tap_step("hujan.konfirmasi", profile, delay + 500, "Konfirmasi Hujan Bonus", text_target="Ya"),
     ]
+    
+    if mode_eksekusi == "pengaturan_awal":
+        steps.extend([
+            _tap_step("hujan.input_koin", profile, delay + 200, "Focus Koin Hujan", text_target="Atur Sekarang"),
+            {"kind": "clear_text", "delay_ms": delay, "note": "Hapus isi sebelumnya"},
+            {"kind": "input_text", "content": koin, "delay_ms": delay, "note": f"Input Koin {koin}"},
+            {"kind": "push", "type": 4, "delay_ms": delay + 800, "note": "Dismiss Keyboard (BACK)"},
+            
+            _tap_step("hujan.input_pemenang", profile, delay + 200, "Focus Jumlah Pemenang"),
+            {"kind": "clear_text", "delay_ms": delay, "note": "Hapus isi sebelumnya"},
+            {"kind": "input_text", "content": pemenang, "delay_ms": delay, "note": f"Input Pemenang {pemenang}"},
+            {"kind": "push", "type": 4, "delay_ms": delay + 800, "note": "Dismiss Keyboard (BACK)"},
+        ])
+        
+    steps.extend([
+        _tap_step("hujan.mulai", profile, delay + 800, "Mulai Hujan Bonus", text_target="Mulai"),
+        _tap_step("hujan.konfirmasi", profile, delay + 500, "Konfirmasi Hujan Bonus", text_target="Ya"),
+    ])
+    return steps
 
 
 BUILDERS = {

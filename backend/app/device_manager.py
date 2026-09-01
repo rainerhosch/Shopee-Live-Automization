@@ -55,9 +55,20 @@ class DeviceManager:
             await log_bus.error(f"Gambar {template_path} tidak mencapai threshold {threshold} (Cuma dapat: {actual_conf:.2f})")
             return False
 
-    async def tap_text(self, devices: str, text: str, timeout: int = 3, tap_right_edge: bool = False) -> bool:
+    async def tap_color_orange_button(self, device_id: str) -> bool:
+        screen_bytes = await self.screenshot_raw(device_id)
+        if not screen_bytes: return False
+        match = vision.find_orange_button_color(screen_bytes)
+        if match:
+            cx, cy = match["center"]
+            await log_bus.info(f"Tombol oranye ditemukan di ({cx}, {cy}), menekan tombol...")
+            await self.tap(device_id, cx, cy)
+            return True
+        return False
+
+    async def tap_text(self, devices: str, text: str, timeout: int = 3, tap_right_edge: bool = False, suppress_error: bool = False) -> bool:
         if hasattr(self.client, "tap_text"):
-            return await self.client.tap_text(devices, text, timeout=timeout, tap_right_edge=tap_right_edge)
+            return await self.client.tap_text(devices, text, timeout=timeout, tap_right_edge=tap_right_edge, suppress_error=suppress_error)
         return False
 
     async def check_text_exists(self, devices: str, text: str) -> bool:

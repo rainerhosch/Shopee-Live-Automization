@@ -245,8 +245,27 @@
   function renderTasks(tasks) {
     const el = $("task-list");
     if (!el) return;
+    
+    // UPDATE 2: Filter tampilan Task Bot Dikonfigurasi
+    const activeView = document.querySelector('.nav-item.active');
+    if (activeView) {
+      const partial = activeView.dataset.partial;
+      const view = activeView.dataset.view;
+      if (view === "task" && partial) {
+        let expectedType = "";
+        if (partial.includes("lelang")) expectedType = "lelang";
+        else if (partial.includes("iklan")) expectedType = "iklan_live";
+        else if (partial.includes("bonus")) expectedType = "bonus_koin";
+        else if (partial.includes("hujan")) expectedType = "hujan_bonus";
+        
+        if (expectedType) {
+          tasks = tasks.filter(t => t.type === expectedType);
+        }
+      }
+    }
+    
     if (!tasks.length) {
-      el.innerHTML = `<div class="muted">No tasks yet.</div>`;
+      el.innerHTML = `<div class="muted">Tidak ada konfigurasi task untuk menu ini.</div>`;
       return;
     }
     el.innerHTML = "";
@@ -368,6 +387,7 @@
   window.currentTaskPayload = function (type) {
     type = type || state.activeTab;
     const operator = document.querySelector('.operator-input') ? document.querySelector('.operator-input').value.trim() : null;
+    const mode = document.querySelector('.task-tab.active') ? document.querySelector('.task-tab.active').dataset.mode : "pengaturan_awal";
 
     let result = {};
     if (type === "lelang") {
@@ -412,7 +432,10 @@
       result = {
         type,
         interval_sec: num($("hujan-interval").value, 600),
-        params: { koin_dibagikan: num($("hujan-koin").value, 255) },
+        params: { 
+          koin_dibagikan: num($("hujan-koin").value, 255),
+          jumlah_pemenang: num($("hujan-pemenang").value, 50)
+        },
       };
     } else {
       result = {
@@ -422,9 +445,12 @@
       };
     }
 
-    if (operator) result.params.operator = operator;
+    if (result.params) {
+      if (operator) result.params.operator = operator;
+      result.params.mode_eksekusi = mode;
+    }
     return result;
-  }
+  };
 
   function placeCrosshair(xPct, yPct) {
     const img = $("ref-image");
@@ -1139,7 +1165,7 @@
             const typeMap = {
               'lelang': 'form-lelang.html',
               'iklan_live': 'form-iklan.html',
-              'bonus_coin': 'form-bonus.html',
+              'bonus_koin': 'form-bonus.html',
               'hujan_bonus': 'form-hujan.html'
             };
             const targetPartial = typeMap[type];
@@ -1179,7 +1205,24 @@
 
 
 
-  // Hook into view switching to render the mock data when New Dashboard is shown
+  // Task Mode Tabs logic
+  const taskTabs = document.querySelectorAll('.task-tab');
+  taskTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.task-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      
+      // Update form title suffix
+      const title = document.getElementById("task-form-title");
+      const activeNav = document.querySelector('.nav-item.active .nav-text');
+      if (title && activeNav) {
+        const devSpan = title.querySelector('#header-dev-1');
+        let suffix = tab.dataset.mode === 'lanjutan' ? ' - TASK 2 (LANJUT / BUAT BARU)' : ' - TASK 1 (PENGATURAN AWAL)';
+        title.innerHTML = 'Configure ' + activeNav.innerText + suffix;
+        if (devSpan) title.appendChild(devSpan);
+      }
+    });
+  });
 
   // Hook into view switching (Updated for Partials)
   const navItems = document.querySelectorAll(".nav-item[data-view]");
@@ -1228,9 +1271,16 @@
           if (navText && title) {
             // Keep the span for header-dev-1
             const devSpan = title.querySelector('#header-dev-1');
-            title.innerHTML = 'Configure ' + navText.innerText;
+            const activeTab = document.querySelector('.task-tab.active');
+            let suffix = activeTab && activeTab.dataset.mode === 'lanjutan' ? ' - TASK 2 (LANJUT / BUAT BARU)' : ' - TASK 1 (PENGATURAN AWAL)';
+            title.innerHTML = 'Configure ' + navText.innerText + suffix;
             if (devSpan) title.appendChild(devSpan);
           }
+            
+            // Re-render tasks to apply filter immediately
+            if (window.state && window.state.bot) {
+              renderTasks(window.state.bot.tasks || []);
+            }
 
           fetch('/static/views/' + btn.dataset.partial)
             .then(res => {
